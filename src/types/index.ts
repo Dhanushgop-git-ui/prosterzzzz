@@ -21,12 +21,4 @@ export interface User {
   role: 'user' | 'admin';
 }
 
-export type PosterCategory = 
-  | 'Abstract'
-  | 'Motivational'
-  | 'Nature'
-  | 'Minimalist'
-  | 'Educational'
-  | 'Art'
-  | 'Typography'
-  | 'Digital Art';
+export type PosterCategory = 'Cars';

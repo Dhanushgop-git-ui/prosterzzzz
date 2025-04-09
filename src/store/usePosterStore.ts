@@ -8,7 +8,7 @@ const demoPosters: Poster[] = [
     id: '1',
     title: 'Abstract Waves',
     image: '/posters/abstract-waves.jpg',
-    category: 'Abstract',
+    category: 'Cars',
     priceA3: 599,
     priceA4: 399,
   },
@@ -16,7 +16,7 @@ const demoPosters: Poster[] = [
     id: '2',
     title: 'Think Different',
     image: '/posters/think-different.jpg',
-    category: 'Motivational',
+    category: 'Cars',
     priceA3: 549,
     priceA4: 349,
   },
@@ -24,7 +24,7 @@ const demoPosters: Poster[] = [
     id: '3',
     title: 'Mountain Serenity',
     image: '/posters/mountain.jpg',
-    category: 'Nature',
+    category: 'Cars',
     priceA3: 649,
     priceA4: 449,
   },
@@ -32,7 +32,7 @@ const demoPosters: Poster[] = [
     id: '4',
     title: 'Geometric Shapes',
     image: '/posters/geometric.jpg',
-    category: 'Minimalist',
+    category: 'Cars',
     priceA3: 499,
     priceA4: 299,
   },
@@ -40,7 +40,7 @@ const demoPosters: Poster[] = [
     id: '5',
     title: 'Never Give Up',
     image: '/posters/never-give-up.jpg',
-    category: 'Motivational',
+    category: 'Cars',
     priceA3: 549,
     priceA4: 349,
   },
@@ -48,7 +48,7 @@ const demoPosters: Poster[] = [
     id: '6',
     title: 'Ocean Sunrise',
     image: '/posters/ocean.jpg',
-    category: 'Nature',
+    category: 'Cars',
     priceA3: 649,
     priceA4: 449,
   },
@@ -56,14 +56,14 @@ const demoPosters: Poster[] = [
     id: '7',
     title: 'Digital Dreams',
     image: '/posters/geometric.jpg',
-    category: 'Digital Art',
+    category: 'Cars',
     priceA3: 699,
     priceA4: 499,
   },
 ];
 
 // Pre-memoize the categories to avoid recalculation
-const initialCategories: PosterCategory[] = ['Abstract', 'Motivational', 'Nature', 'Minimalist', 'Educational', 'Art', 'Typography', 'Digital Art'];
+const initialCategories: PosterCategory[] = ['Cars'];
 
 // Pre-memoize the featured posters to avoid recalculation on each render
 const featuredPosters = demoPosters.slice(0, 4);
