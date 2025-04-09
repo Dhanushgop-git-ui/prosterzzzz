@@ -64,6 +64,9 @@ interface PosterStore {
   getFeaturedPosters: () => Poster[];
 }
 
+// Pre-memoize the featured posters to avoid recalculation on each render
+const featuredPosters = demoPosters.slice(0, 4);
+
 export const usePosterStore = create<PosterStore>()((set, get) => ({
   posters: demoPosters,
   categories: ['Abstract', 'Motivational', 'Nature', 'Minimalist', 'Educational', 'Art', 'Typography'],
@@ -96,10 +99,6 @@ export const usePosterStore = create<PosterStore>()((set, get) => ({
     return posters.filter((poster) => poster.category === category);
   },
   
-  getFeaturedPosters: () => {
-    const { posters } = get();
-    // In a real app, you might have a "featured" flag on posters
-    // For now, just return the first 4 posters
-    return posters.slice(0, 4);
-  },
+  // Return the pre-memoized featured posters to avoid recalculations
+  getFeaturedPosters: () => featuredPosters,
 }));
