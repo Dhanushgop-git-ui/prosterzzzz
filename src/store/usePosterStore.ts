@@ -52,10 +52,18 @@ const demoPosters: Poster[] = [
     priceA3: 649,
     priceA4: 449,
   },
+  {
+    id: '7',
+    title: 'Digital Dreams',
+    image: '/posters/geometric.jpg',
+    category: 'Digital Art',
+    priceA3: 699,
+    priceA4: 499,
+  },
 ];
 
 // Pre-memoize the categories to avoid recalculation
-const categories: PosterCategory[] = ['Abstract', 'Motivational', 'Nature', 'Minimalist', 'Educational', 'Art', 'Typography'];
+const categories: PosterCategory[] = ['Abstract', 'Motivational', 'Nature', 'Minimalist', 'Educational', 'Art', 'Typography', 'Digital Art'];
 
 // Pre-memoize the featured posters to avoid recalculation on each render
 const featuredPosters = demoPosters.slice(0, 4);

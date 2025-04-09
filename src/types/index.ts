@@ -28,4 +28,5 @@ export type PosterCategory =
   | 'Minimalist'
   | 'Educational'
   | 'Art'
-  | 'Typography';
+  | 'Typography'
+  | 'Digital Art';

@@ -47,7 +47,7 @@
 
 @layer components {
   .poster-card {
-    @apply bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1;
+    @apply bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
   }
   
   .poster-image {
@@ -69,4 +69,65 @@
   .btn-icon {
     @apply p-2 rounded-full bg-prosterz-50 text-prosterz-900 hover:bg-prosterz-100 transition-colors;
   }
+  
+  /* New gradient backgrounds */
+  .bg-gradient-cool {
+    @apply bg-gradient-to-r from-blue-400 to-purple-500;
+  }
+  
+  .bg-gradient-warm {
+    @apply bg-gradient-to-r from-red-400 to-yellow-400;
+  }
+  
+  .bg-gradient-nature {
+    @apply bg-gradient-to-r from-green-400 to-teal-400;
+  }
+  
+  /* 3D effect classes */
+  .card-3d {
+    @apply transition-all duration-300 transform hover:translate-z-10 hover:shadow-xl;
+    transform-style: preserve-3d;
+  }
+  
+  .rotate-hover {
+    @apply transition-transform duration-300;
+    transform-style: preserve-3d;
+  }
+  
+  .rotate-hover:hover {
+    transform: perspective(1000px) rotateY(10deg);
+  }
+}
+
+/* Animation keyframes */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.pulse-animation {
+  animation: pulse 2s ease-in-out infinite;
 }
