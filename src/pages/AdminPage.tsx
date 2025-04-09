@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { User } from '@/types';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -20,11 +21,11 @@ const AdminPage = () => {
   useEffect(() => {
     if (!user) {
       // For demonstration, automatically log in as admin
-      const admin = {
+      const admin: User = {
         id: 'admin1',
         name: 'Admin User',
         email: 'admin@prosterz.com',
-        role: 'admin'
+        role: 'admin' // Now this is typed correctly as a literal 'admin'
       };
       
       useAuthStore.getState().login(admin);
