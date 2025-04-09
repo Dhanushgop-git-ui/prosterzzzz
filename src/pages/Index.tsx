@@ -3,11 +3,19 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import PosterGrid from '@/components/posters/PosterGrid';
+import CategoryFilter from '@/components/posters/CategoryFilter';
 import { usePosterStore } from '@/store/usePosterStore';
 
 const Index = () => {
-  // Use memoized selector to prevent infinite re-renders
+  // Get all posters and categories
+  const posters = usePosterStore(state => state.posters);
   const featuredPosters = usePosterStore(state => state.getFeaturedPosters());
+  const [selectedCategory, setSelectedCategory] = React.useState('All');
+  
+  // Filter posters by selected category
+  const filteredPosters = selectedCategory === 'All'
+    ? posters
+    : posters.filter((poster) => poster.category === selectedCategory);
   
   return (
     <Layout>
@@ -28,6 +36,19 @@ const Index = () => {
       
       <div className="container mx-auto py-16 px-4">
         <PosterGrid posters={featuredPosters} title="Featured Posters" />
+        
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold mb-8">Browse All Posters</h2>
+          
+          <div className="mb-8">
+            <CategoryFilter
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
+          </div>
+          
+          <PosterGrid posters={filteredPosters} />
+        </div>
         
         <div className="mt-12 text-center">
           <Link

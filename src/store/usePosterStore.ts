@@ -63,7 +63,7 @@ const demoPosters: Poster[] = [
 ];
 
 // Pre-memoize the categories to avoid recalculation
-const categories: PosterCategory[] = ['Abstract', 'Motivational', 'Nature', 'Minimalist', 'Educational', 'Art', 'Typography', 'Digital Art'];
+const initialCategories: PosterCategory[] = ['Abstract', 'Motivational', 'Nature', 'Minimalist', 'Educational', 'Art', 'Typography', 'Digital Art'];
 
 // Pre-memoize the featured posters to avoid recalculation on each render
 const featuredPosters = demoPosters.slice(0, 4);
@@ -76,11 +76,12 @@ interface PosterStore {
   deletePoster: (id: string) => void;
   getPostersByCategory: (category: string) => Poster[];
   getFeaturedPosters: () => Poster[];
+  addCategory: (category: PosterCategory) => void;
 }
 
 export const usePosterStore = create<PosterStore>()((set, get) => ({
   posters: demoPosters,
-  categories: categories,
+  categories: initialCategories,
   
   addPoster: (poster) => {
     const newPoster = {
@@ -112,4 +113,15 @@ export const usePosterStore = create<PosterStore>()((set, get) => ({
   
   // Return the pre-memoized featured posters to avoid recalculations
   getFeaturedPosters: () => featuredPosters,
+  
+  // Add a new category to the store
+  addCategory: (category) => {
+    // Make sure we don't add duplicate categories
+    set((state) => {
+      if (state.categories.includes(category)) {
+        return state; // No change if category already exists
+      }
+      return { categories: [...state.categories, category] };
+    });
+  },
 }));

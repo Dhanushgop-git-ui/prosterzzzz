@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader, Upload } from 'lucide-react';
+import { Loader, Upload, Plus } from 'lucide-react';
+import { PosterCategory } from '@/types';
 
 interface PosterFormProps {
   onComplete?: () => void;
@@ -15,10 +16,12 @@ interface PosterFormProps {
 
 const PosterForm = ({ onComplete }: PosterFormProps) => {
   const { toast } = useToast();
-  const { addPoster, categories } = usePosterStore();
+  const { addPoster, categories, addCategory } = usePosterStore();
   
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string>('');
+  const [newCategory, setNewCategory] = useState<string>('');
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [priceA3, setPriceA3] = useState<number>(599);
   const [priceA4, setPriceA4] = useState<number>(399);
   const [image, setImage] = useState<File | null>(null);
@@ -38,6 +41,38 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
       }
     },
   });
+
+  const handleAddNewCategory = () => {
+    if (!newCategory || newCategory.trim() === '') {
+      toast({
+        title: 'Invalid Category',
+        description: 'Please enter a valid category name.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate that this is a new category
+    if (categories.includes(newCategory as PosterCategory)) {
+      toast({
+        title: 'Category Already Exists',
+        description: `${newCategory} is already in the list of categories.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Add the new category
+    addCategory(newCategory as PosterCategory);
+    setCategory(newCategory);
+    setNewCategory('');
+    setShowNewCategoryInput(false);
+    
+    toast({
+      title: 'Category Added',
+      description: `${newCategory} has been added to the categories.`,
+    });
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,19 +133,62 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="category">Category</Label>
-        <Select value={category} onValueChange={setCategory} required>
-          <SelectTrigger id="category">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {showNewCategoryInput ? (
+          <div className="space-y-2">
+            <Label htmlFor="newCategory">New Category</Label>
+            <div className="flex space-x-2">
+              <Input
+                id="newCategory"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="Enter new category name"
+                className="flex-1"
+              />
+              <Button 
+                type="button" 
+                onClick={handleAddNewCategory} 
+                className="bg-prosterz-800"
+              >
+                Add
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowNewCategoryInput(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="category">Category</Label>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowNewCategoryInput(true)}
+                className="flex items-center text-prosterz-600 hover:text-prosterz-900"
+              >
+                <Plus size={16} className="mr-1" />
+                New Category
+              </Button>
+            </div>
+            <Select value={category} onValueChange={setCategory} required>
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       
       <div className="grid grid-cols-2 gap-4">
