@@ -8,21 +8,43 @@ import PosterList from '@/components/admin/PosterList';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 const AdminPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user, isAdmin } = useAuthStore();
   const [activeTab, setActiveTab] = useState('list');
   
+  // Automatically log in as admin for demo purposes
   useEffect(() => {
-    // Check if user is admin
-    if (!user || !isAdmin()) {
-      navigate('/login');
+    if (!user) {
+      // For demonstration, automatically log in as admin
+      const admin = {
+        id: 'admin1',
+        name: 'Admin User',
+        email: 'admin@prosterz.com',
+        role: 'admin'
+      };
+      
+      useAuthStore.getState().login(admin);
+      toast({
+        title: "Admin Demo Mode",
+        description: "You've been automatically logged in as admin for demonstration purposes.",
+      });
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, toast]);
   
-  if (!user || !isAdmin()) {
-    return null; // Will redirect in the useEffect
+  if (!isAdmin()) {
+    return (
+      <Layout>
+        <div className="container mx-auto py-12 px-4 text-center">
+          <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+          <p className="mb-6">You need admin permissions to access this page.</p>
+          <Button onClick={() => navigate('/')}>Back to Home</Button>
+        </div>
+      </Layout>
+    );
   }
   
   return (
@@ -30,7 +52,7 @@ const AdminPage = () => {
       <div className="container mx-auto py-12 px-4">
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-8">
             <TabsTrigger value="list" className="flex items-center">
               <List size={16} className="mr-2" />

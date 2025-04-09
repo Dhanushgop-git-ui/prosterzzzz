@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 
 const Navbar = () => {
   const totalItems = useCartStore((state) => state.getTotalItems());
-  const { user, logout } = useAuthStore();
+  const { user, logout, isAdmin } = useAuthStore();
 
   return (
     <header className="bg-white border-b">
@@ -30,6 +30,11 @@ const Navbar = () => {
           <Link to="/contact" className="text-prosterz-800 hover:text-prosterz-900">
             Contact
           </Link>
+          {user && isAdmin() && (
+            <Link to="/admin" className="text-prosterz-800 hover:text-prosterz-900 font-medium">
+              Admin
+            </Link>
+          )}
         </nav>
         
         <div className="flex items-center space-x-4">
@@ -44,7 +49,7 @@ const Navbar = () => {
           
           {user ? (
             <div className="flex items-center space-x-2">
-              {user.role === 'admin' && (
+              {isAdmin() && (
                 <Link to="/admin" className="text-sm text-prosterz-800 hover:text-prosterz-900">
                   Admin
                 </Link>
