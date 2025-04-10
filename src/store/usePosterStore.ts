@@ -1,14 +1,39 @@
 import { create } from 'zustand';
 import { Poster, PosterCategory } from '@/types';
 
-// Empty posters array (removed all demo posters)
-const demoPosters: Poster[] = [];
+// Define some demo posters to populate the store
+const demoPosters: Poster[] = [
+  {
+    id: '1',
+    title: 'Classic Ferrari F40',
+    image: '/lovable-uploads/fd7edbe1-67ec-4bf6-b8db-370b59439602.png',
+    category: 'Cars',
+    priceA3: 599,
+    priceA4: 399,
+  },
+  {
+    id: '2',
+    title: 'Lamborghini Aventador',
+    image: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?q=80&w=774&auto=format&fit=crop',
+    category: 'Cars',
+    priceA3: 699,
+    priceA4: 499,
+  },
+  {
+    id: '3',
+    title: 'Vintage Porsche 911',
+    image: 'https://images.unsplash.com/photo-1621365299478-76c394603dfb?q=80&w=1170&auto=format&fit=crop',
+    category: 'Cars',
+    priceA3: 649,
+    priceA4: 449,
+  }
+];
+
+// Set the Ferrari as a featured poster
+const featuredPosters: Poster[] = [demoPosters[0]];
 
 // Keep only the Cars category
 const initialCategories: PosterCategory[] = ['Cars'];
-
-// Empty featured posters array
-const featuredPosters: Poster[] = [];
 
 interface PosterStore {
   posters: Poster[];
@@ -53,10 +78,8 @@ export const usePosterStore = create<PosterStore>()((set, get) => ({
     return posters.filter((poster) => poster.category === category);
   },
   
-  // Return empty featured posters array
   getFeaturedPosters: () => featuredPosters,
   
-  // Add a new category to the store
   addCategory: (category) => {
     // Make sure we don't add duplicate categories
     set((state) => {
