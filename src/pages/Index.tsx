@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import PosterGrid from '@/components/posters/PosterGrid';
@@ -7,17 +7,20 @@ import CategoryFilter from '@/components/posters/CategoryFilter';
 import { usePosterStore } from '@/store/usePosterStore';
 
 const Index = () => {
-  // Get all posters and categories
+  // Get all posters and categories using useMemo to prevent infinite updates
   const posters = usePosterStore(state => state.posters);
-  const featuredPosters = usePosterStore(state => state.getFeaturedPosters());
+  const getFeaturedPosters = usePosterStore(state => state.getFeaturedPosters);
+  const featuredPosters = useMemo(() => getFeaturedPosters(), [getFeaturedPosters]);
+  
   const [selectedCategory, setSelectedCategory] = useState('All');
   
-  // Filter posters by selected category
-  const filteredPosters = usePosterStore(state => 
-    selectedCategory === 'All' 
-      ? state.posters 
-      : state.getPostersByCategory(selectedCategory)
-  );
+  // Use useMemo to prevent infinite updates
+  const filteredPosters = useMemo(() => {
+    if (selectedCategory === 'All') {
+      return posters;
+    }
+    return usePosterStore.getState().getPostersByCategory(selectedCategory);
+  }, [selectedCategory, posters]);
   
   return (
     <Layout>

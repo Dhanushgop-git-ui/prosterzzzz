@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Layout from '@/components/layout/Layout';
 import PosterGrid from '@/components/posters/PosterGrid';
 import CategoryFilter from '@/components/posters/CategoryFilter';
@@ -7,12 +7,15 @@ import { usePosterStore } from '@/store/usePosterStore';
 
 const PostersPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const getPostersByCategory = usePosterStore((state) => state.getPostersByCategory);
   const posters = usePosterStore((state) => state.posters);
   
-  const filteredPosters = selectedCategory === 'All'
-    ? posters
-    : getPostersByCategory(selectedCategory);
+  // Use useMemo to prevent unnecessary recalculations
+  const filteredPosters = useMemo(() => {
+    if (selectedCategory === 'All') {
+      return posters;
+    }
+    return usePosterStore.getState().getPostersByCategory(selectedCategory);
+  }, [selectedCategory, posters]);
   
   return (
     <Layout>
