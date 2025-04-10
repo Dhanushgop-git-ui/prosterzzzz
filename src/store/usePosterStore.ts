@@ -1,4 +1,6 @@
+
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Poster, PosterCategory } from '@/types';
 
 // Define some demo posters to populate the store
@@ -46,47 +48,57 @@ interface PosterStore {
   addCategory: (category: PosterCategory) => void;
 }
 
-export const usePosterStore = create<PosterStore>()((set, get) => ({
-  posters: demoPosters,
-  categories: initialCategories,
-  
-  addPoster: (poster) => {
-    const newPoster = {
-      ...poster,
-      id: Date.now().toString(),
-    };
-    set((state) => ({ posters: [...state.posters, newPoster] }));
-  },
-  
-  updatePoster: (id, posterData) => {
-    set((state) => ({
-      posters: state.posters.map((poster) =>
-        poster.id === id ? { ...poster, ...posterData } : poster
-      ),
-    }));
-  },
-  
-  deletePoster: (id) => {
-    set((state) => ({
-      posters: state.posters.filter((poster) => poster.id !== id),
-    }));
-  },
-  
-  getPostersByCategory: (category) => {
-    const { posters } = get();
-    if (category === 'All') return posters;
-    return posters.filter((poster) => poster.category === category);
-  },
-  
-  getFeaturedPosters: () => featuredPosters,
-  
-  addCategory: (category) => {
-    // Make sure we don't add duplicate categories
-    set((state) => {
-      if (state.categories.includes(category)) {
-        return state; // No change if category already exists
-      }
-      return { categories: [...state.categories, category] };
-    });
-  },
-}));
+export const usePosterStore = create<PosterStore>()(
+  persist(
+    (set, get) => ({
+      posters: demoPosters,
+      categories: initialCategories,
+      
+      addPoster: (poster) => {
+        const newPoster = {
+          ...poster,
+          id: Date.now().toString(),
+        };
+        set((state) => ({ posters: [...state.posters, newPoster] }));
+      },
+      
+      updatePoster: (id, posterData) => {
+        set((state) => ({
+          posters: state.posters.map((poster) =>
+            poster.id === id ? { ...poster, ...posterData } : poster
+          ),
+        }));
+      },
+      
+      deletePoster: (id) => {
+        set((state) => ({
+          posters: state.posters.filter((poster) => poster.id !== id),
+        }));
+      },
+      
+      getPostersByCategory: (category) => {
+        const { posters } = get();
+        if (category === 'All') return posters;
+        return posters.filter((poster) => poster.category === category);
+      },
+      
+      getFeaturedPosters: () => {
+        const { posters } = get();
+        return posters.length > 0 ? [posters[0]] : [];
+      },
+      
+      addCategory: (category) => {
+        // Make sure we don't add duplicate categories
+        set((state) => {
+          if (state.categories.includes(category)) {
+            return state; // No change if category already exists
+          }
+          return { categories: [...state.categories, category] };
+        });
+      },
+    }),
+    {
+      name: 'poster-storage', // unique name for localStorage
+    }
+  )
+);

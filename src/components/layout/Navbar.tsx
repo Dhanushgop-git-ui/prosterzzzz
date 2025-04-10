@@ -1,14 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User, LogIn, LogOut } from 'lucide-react';
+import { ShoppingCart, User, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const Navbar = () => {
   const totalItems = useCartStore((state) => state.getTotalItems());
   const { user, logout, isAdmin } = useAuthStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <header className="bg-white border-b">
@@ -50,21 +52,51 @@ const Navbar = () => {
           {user ? (
             <div className="flex items-center space-x-2">
               {isAdmin() && (
-                <Link to="/admin" className="text-sm text-prosterz-800 hover:text-prosterz-900">
+                <Link to="/admin" className="text-sm text-prosterz-800 hover:text-prosterz-900 md:hidden">
                   Admin
                 </Link>
               )}
               <Button variant="ghost" size="sm" onClick={logout} className="flex items-center space-x-1">
                 <LogOut size={16} />
-                <span>Logout</span>
+                <span className="hidden md:inline">Logout</span>
               </Button>
             </div>
           ) : (
             <Link to="/login" className="flex items-center space-x-1 text-prosterz-800 hover:text-prosterz-900">
               <LogIn size={16} />
-              <span>Login</span>
+              <span className="hidden md:inline">Login</span>
             </Link>
           )}
+          
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu size={20} />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[240px]">
+              <div className="flex flex-col space-y-4 mt-8">
+                <Link to="/" className="text-prosterz-800 hover:text-prosterz-900 px-2 py-1.5">
+                  Home
+                </Link>
+                <Link to="/posters" className="text-prosterz-800 hover:text-prosterz-900 px-2 py-1.5">
+                  Shop
+                </Link>
+                <Link to="/about" className="text-prosterz-800 hover:text-prosterz-900 px-2 py-1.5">
+                  About
+                </Link>
+                <Link to="/contact" className="text-prosterz-800 hover:text-prosterz-900 px-2 py-1.5">
+                  Contact
+                </Link>
+                {user && isAdmin() && (
+                  <Link to="/admin" className="text-prosterz-800 hover:text-prosterz-900 font-medium px-2 py-1.5">
+                    Admin Dashboard
+                  </Link>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

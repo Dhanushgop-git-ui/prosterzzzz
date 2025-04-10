@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Instagram, Facebook, Twitter } from 'lucide-react';
+import { Instagram } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -16,12 +16,6 @@ const Footer = () => {
             <div className="flex space-x-4">
               <a href="https://instagram.com/prosterzzzz" className="text-white hover:text-prosterz-300" target="_blank" rel="noreferrer">
                 <Instagram size={20} />
-              </a>
-              <a href="#" className="text-white hover:text-prosterz-300">
-                <Facebook size={20} />
-              </a>
-              <a href="#" className="text-white hover:text-prosterz-300">
-                <Twitter size={20} />
               </a>
             </div>
           </div>

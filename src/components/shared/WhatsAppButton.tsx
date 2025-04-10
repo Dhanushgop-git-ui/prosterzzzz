@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle } from 'lucide-react';
+import { Whatsapp } from 'lucide-react';
 import { generateWhatsAppLink } from '@/lib/utils';
 
 const WhatsAppButton = () => {
@@ -33,7 +33,7 @@ const WhatsAppButton = () => {
       >
         <div className="flex items-center">
           <div className="w-12 h-12 flex items-center justify-center relative">
-            <MessageCircle size={28} className="text-white" />
+            <Whatsapp size={28} className="text-white" />
             <motion.span
               className="absolute -top-1 -right-1 bg-white w-3 h-3 rounded-full"
               animate={{ 
