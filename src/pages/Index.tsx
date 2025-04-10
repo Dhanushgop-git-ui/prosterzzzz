@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import PosterGrid from '@/components/posters/PosterGrid';
@@ -10,20 +10,22 @@ const Index = () => {
   // Get all posters and categories
   const posters = usePosterStore(state => state.posters);
   const featuredPosters = usePosterStore(state => state.getFeaturedPosters());
-  const [selectedCategory, setSelectedCategory] = React.useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   
   // Filter posters by selected category
-  const filteredPosters = selectedCategory === 'All'
-    ? posters
-    : posters.filter((poster) => poster.category === selectedCategory);
+  const filteredPosters = usePosterStore(state => 
+    selectedCategory === 'All' 
+      ? state.posters 
+      : state.getPostersByCategory(selectedCategory)
+  );
   
   return (
     <Layout>
       <div className="hero bg-prosterz-50 py-20 px-4">
         <div className="container mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">Premium Posters for Your Space</h1>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">Premium Car Posters for Your Space</h1>
           <p className="text-xl md:text-2xl text-prosterz-600 mb-8 max-w-3xl mx-auto">
-            Discover our collection of high-quality posters to beautify your home, office, or any space.
+            Discover our collection of high-quality car posters to beautify your home, office, or any space.
           </p>
           <Link
             to="/posters"
@@ -35,10 +37,10 @@ const Index = () => {
       </div>
       
       <div className="container mx-auto py-16 px-4">
-        <PosterGrid posters={featuredPosters} title="Featured Posters" />
+        <PosterGrid posters={featuredPosters} title="Featured Car Posters" />
         
         <div className="mt-16">
-          <h2 className="text-3xl font-bold mb-8">Browse All Posters</h2>
+          <h2 className="text-3xl font-bold mb-8">Browse All Car Posters</h2>
           
           <div className="mb-8">
             <CategoryFilter
@@ -71,7 +73,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-2">Premium Quality</h3>
               <p className="text-prosterz-600">
-                Our posters are printed on high-quality paper for vibrant colors and durability.
+                Our car posters are printed on high-quality paper for vibrant colors and durability.
               </p>
             </div>
             
@@ -83,7 +85,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-2">Fast Delivery</h3>
               <p className="text-prosterz-600">
-                We ensure quick processing and shipping to get your posters to you as soon as possible.
+                We ensure quick processing and shipping to get your car posters to you as soon as possible.
               </p>
             </div>
             
@@ -95,7 +97,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-2">Wide Selection</h3>
               <p className="text-prosterz-600">
-                Browse our diverse collection of designs, from motivational quotes to artistic pieces.
+                Browse our diverse collection of car designs, from classic cars to modern supercars.
               </p>
             </div>
           </div>

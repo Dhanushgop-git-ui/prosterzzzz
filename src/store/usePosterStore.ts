@@ -2,11 +2,11 @@
 import { create } from 'zustand';
 import { Poster, PosterCategory } from '@/types';
 
-// Demo data
+// Demo data with car-related posters
 const demoPosters: Poster[] = [
   {
     id: '1',
-    title: 'Abstract Waves',
+    title: 'Ferrari F40',
     image: '/posters/abstract-waves.jpg',
     category: 'Cars',
     priceA3: 599,
@@ -14,7 +14,7 @@ const demoPosters: Poster[] = [
   },
   {
     id: '2',
-    title: 'Think Different',
+    title: 'Lamborghini Aventador',
     image: '/posters/think-different.jpg',
     category: 'Cars',
     priceA3: 549,
@@ -22,7 +22,7 @@ const demoPosters: Poster[] = [
   },
   {
     id: '3',
-    title: 'Mountain Serenity',
+    title: 'Porsche 911',
     image: '/posters/mountain.jpg',
     category: 'Cars',
     priceA3: 649,
@@ -30,7 +30,7 @@ const demoPosters: Poster[] = [
   },
   {
     id: '4',
-    title: 'Geometric Shapes',
+    title: 'Bugatti Chiron',
     image: '/posters/geometric.jpg',
     category: 'Cars',
     priceA3: 499,
@@ -38,7 +38,7 @@ const demoPosters: Poster[] = [
   },
   {
     id: '5',
-    title: 'Never Give Up',
+    title: 'McLaren P1',
     image: '/posters/never-give-up.jpg',
     category: 'Cars',
     priceA3: 549,
@@ -46,7 +46,7 @@ const demoPosters: Poster[] = [
   },
   {
     id: '6',
-    title: 'Ocean Sunrise',
+    title: 'Aston Martin DB5',
     image: '/posters/ocean.jpg',
     category: 'Cars',
     priceA3: 649,
@@ -54,7 +54,7 @@ const demoPosters: Poster[] = [
   },
   {
     id: '7',
-    title: 'Digital Dreams',
+    title: 'Tesla Roadster',
     image: '/posters/geometric.jpg',
     category: 'Cars',
     priceA3: 699,

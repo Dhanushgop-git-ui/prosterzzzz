@@ -7,16 +7,17 @@ import { usePosterStore } from '@/store/usePosterStore';
 
 const PostersPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const getPostersByCategory = usePosterStore((state) => state.getPostersByCategory);
   const posters = usePosterStore((state) => state.posters);
   
   const filteredPosters = selectedCategory === 'All'
     ? posters
-    : posters.filter((poster) => poster.category === selectedCategory);
+    : getPostersByCategory(selectedCategory);
   
   return (
     <Layout>
       <div className="container mx-auto py-12 px-4">
-        <h1 className="text-4xl font-bold mb-8">Shop Posters</h1>
+        <h1 className="text-4xl font-bold mb-8">Shop Car Posters</h1>
         
         <div className="flex flex-col md:flex-row gap-8">
           <aside className="md:w-1/4">
@@ -29,7 +30,7 @@ const PostersPage = () => {
           <div className="md:w-3/4">
             <PosterGrid 
               posters={filteredPosters} 
-              title={selectedCategory === 'All' ? 'All Posters' : selectedCategory}
+              title={selectedCategory === 'All' ? 'All Car Posters' : selectedCategory}
             />
           </div>
         </div>
