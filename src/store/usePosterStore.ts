@@ -1,72 +1,14 @@
-
 import { create } from 'zustand';
 import { Poster, PosterCategory } from '@/types';
 
-// Demo data with car-related posters
-const demoPosters: Poster[] = [
-  {
-    id: '1',
-    title: 'Ferrari F40',
-    image: '/posters/abstract-waves.jpg',
-    category: 'Cars',
-    priceA3: 599,
-    priceA4: 399,
-  },
-  {
-    id: '2',
-    title: 'Lamborghini Aventador',
-    image: '/posters/think-different.jpg',
-    category: 'Cars',
-    priceA3: 549,
-    priceA4: 349,
-  },
-  {
-    id: '3',
-    title: 'Porsche 911',
-    image: '/posters/mountain.jpg',
-    category: 'Cars',
-    priceA3: 649,
-    priceA4: 449,
-  },
-  {
-    id: '4',
-    title: 'Bugatti Chiron',
-    image: '/posters/geometric.jpg',
-    category: 'Cars',
-    priceA3: 499,
-    priceA4: 299,
-  },
-  {
-    id: '5',
-    title: 'McLaren P1',
-    image: '/posters/never-give-up.jpg',
-    category: 'Cars',
-    priceA3: 549,
-    priceA4: 349,
-  },
-  {
-    id: '6',
-    title: 'Aston Martin DB5',
-    image: '/posters/ocean.jpg',
-    category: 'Cars',
-    priceA3: 649,
-    priceA4: 449,
-  },
-  {
-    id: '7',
-    title: 'Tesla Roadster',
-    image: '/posters/geometric.jpg',
-    category: 'Cars',
-    priceA3: 699,
-    priceA4: 499,
-  },
-];
+// Empty posters array (removed all demo posters)
+const demoPosters: Poster[] = [];
 
-// Pre-memoize the categories to avoid recalculation
+// Keep only the Cars category
 const initialCategories: PosterCategory[] = ['Cars'];
 
-// Pre-memoize the featured posters to avoid recalculation on each render
-const featuredPosters = demoPosters.slice(0, 4);
+// Empty featured posters array
+const featuredPosters: Poster[] = [];
 
 interface PosterStore {
   posters: Poster[];
@@ -111,7 +53,7 @@ export const usePosterStore = create<PosterStore>()((set, get) => ({
     return posters.filter((poster) => poster.category === category);
   },
   
-  // Return the pre-memoized featured posters to avoid recalculations
+  // Return empty featured posters array
   getFeaturedPosters: () => featuredPosters,
   
   // Add a new category to the store
