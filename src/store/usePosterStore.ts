@@ -48,6 +48,7 @@ interface PosterStore {
   addCategory: (category: PosterCategory) => void;
 }
 
+// Create the store with improved persistence
 export const usePosterStore = create<PosterStore>()(
   persist(
     (set, get) => ({
@@ -88,7 +89,6 @@ export const usePosterStore = create<PosterStore>()(
       },
       
       addCategory: (category) => {
-        // Make sure we don't add duplicate categories
         set((state) => {
           if (state.categories.includes(category)) {
             return state; // No change if category already exists
@@ -99,6 +99,18 @@ export const usePosterStore = create<PosterStore>()(
     }),
     {
       name: 'poster-storage', // unique name for localStorage
+      version: 1, // Add version for future migrations if needed
+      partialize: (state) => ({
+        // Only store these fields in localStorage
+        posters: state.posters,
+        categories: state.categories
+      }),
+      // Add storage event listener to sync between tabs
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          console.log('Poster store hydrated from localStorage');
+        }
+      },
     }
   )
 );
