@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, List, Loader } from 'lucide-react';
+import { Plus, List, Loader, Upload } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import PosterForm from '@/components/admin/PosterForm';
 import PosterList from '@/components/admin/PosterList';
+import BulkPosterUpload from '@/components/admin/BulkPosterUpload';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -88,6 +89,10 @@ const AdminPage = () => {
                 <Plus size={16} className="mr-2" />
                 Add Poster
               </TabsTrigger>
+              <TabsTrigger value="bulk" className="flex items-center">
+                <Upload size={16} className="mr-2" />
+                Bulk Upload
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="list">
@@ -102,6 +107,12 @@ const AdminPage = () => {
                   // Refresh the list of posters
                   fetchPosters();
                 }} />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="bulk">
+              <div className="max-w-xl mx-auto">
+                <BulkPosterUpload />
               </div>
             </TabsContent>
           </Tabs>
