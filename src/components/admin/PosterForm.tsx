@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader, Upload, Plus } from 'lucide-react';
 import { PosterCategory } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PosterFormProps {
   onComplete?: () => void;
@@ -74,7 +75,22 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
     });
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const uploadImage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    const filePath = `${fileName}`;
+    
+    try {
+      // For simplicity, we're using the existing URL for demo purposes
+      // In a real app, you'd upload to Supabase Storage
+      return preview;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw new Error('Failed to upload image');
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!image || !title || !category || !priceA3 || !priceA4) {
@@ -88,12 +104,14 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
     
     setIsLoading(true);
     
-    // In a real application, we would upload the image to a server here
-    // For demo purposes, we'll just use the preview URL
-    setTimeout(() => {
-      addPoster({
+    try {
+      // For demonstration, use the preview URL
+      // In a real implementation, upload the image to Supabase Storage
+      const imageUrl = preview;
+      
+      await addPoster({
         title,
-        image: preview,
+        image: imageUrl,
         category,
         priceA3,
         priceA4,
@@ -111,12 +129,20 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
       setPriceA4(399);
       setImage(null);
       setPreview('');
-      setIsLoading(false);
       
       if (onComplete) {
         onComplete();
       }
-    }, 1000);
+    } catch (error) {
+      console.error('Error adding poster:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add poster. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (

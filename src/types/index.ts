@@ -21,4 +21,4 @@ export interface User {
   role: 'user' | 'admin';
 }
 
-export type PosterCategory = 'Cars';
+export type PosterCategory = string;

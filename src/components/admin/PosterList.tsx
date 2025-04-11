@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Loader } from 'lucide-react';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Poster } from '@/types';
 import { formatPrice } from '@/lib/utils';
@@ -9,15 +9,23 @@ import { useToast } from '@/hooks/use-toast';
 
 const PosterList = () => {
   const { toast } = useToast();
-  const { posters, deletePoster } = usePosterStore();
+  const { posters, deletePoster, isLoading, fetchPosters } = usePosterStore();
   
-  const handleDelete = (id: string, title: string) => {
+  const handleDelete = async (id: string, title: string) => {
     if (window.confirm(`Are you sure you want to delete "${title}"?`)) {
-      deletePoster(id);
-      toast({
-        title: 'Poster Deleted',
-        description: `"${title}" has been removed.`,
-      });
+      try {
+        await deletePoster(id);
+        toast({
+          title: 'Poster Deleted',
+          description: `"${title}" has been removed.`,
+        });
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to delete poster. Please try again.',
+          variant: 'destructive',
+        });
+      }
     }
   };
   
@@ -27,10 +35,42 @@ const PosterList = () => {
       description: 'In a full implementation, this would open an edit form.',
     });
   };
+
+  const handleRefresh = () => {
+    fetchPosters();
+    toast({
+      title: 'Refreshing',
+      description: 'Fetching the latest posters from the database.',
+    });
+  };
+  
+  if (isLoading && posters.length === 0) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader className="animate-spin mr-2" />
+        <p>Loading posters...</p>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Manage Posters</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Manage Posters</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader size={16} className="mr-2 animate-spin" />
+              Refreshing...
+            </>
+          ) : 'Refresh'}
+        </Button>
+      </div>
       
       {posters.length === 0 ? (
         <p className="text-prosterz-600 py-4">No posters available. Add your first poster!</p>

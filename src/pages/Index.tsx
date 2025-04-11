@@ -1,26 +1,40 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import PosterGrid from '@/components/posters/PosterGrid';
 import CategoryFilter from '@/components/posters/CategoryFilter';
 import { usePosterStore } from '@/store/usePosterStore';
+import { Loader } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
-  // Get all posters and categories using useMemo to prevent infinite updates
-  const posters = usePosterStore(state => state.posters);
-  const getFeaturedPosters = usePosterStore(state => state.getFeaturedPosters);
-  const featuredPosters = useMemo(() => getFeaturedPosters(), [getFeaturedPosters]);
+  const { posters, categories, getFeaturedPosters, getPostersByCategory, fetchPosters, isLoading, error } = usePosterStore();
+  const { toast } = useToast();
   
+  const featuredPosters = useMemo(() => getFeaturedPosters(), [getFeaturedPosters, posters]);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  
+  // Fetch posters on component mount
+  useEffect(() => {
+    fetchPosters();
+  }, [fetchPosters]);
+  
+  // Show error toast if fetching posters fails
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  }, [error, toast]);
   
   // Use useMemo to prevent infinite updates
   const filteredPosters = useMemo(() => {
-    if (selectedCategory === 'All') {
-      return posters;
-    }
-    return usePosterStore.getState().getPostersByCategory(selectedCategory);
-  }, [selectedCategory, posters]);
+    return selectedCategory === 'All' ? posters : getPostersByCategory(selectedCategory);
+  }, [selectedCategory, posters, getPostersByCategory]);
   
   return (
     <Layout>
@@ -40,29 +54,38 @@ const Index = () => {
       </div>
       
       <div className="container mx-auto py-16 px-4">
-        <PosterGrid posters={featuredPosters} title="Featured Car Posters" />
-        
-        <div className="mt-16">
-          <h2 className="text-3xl font-bold mb-8">Browse All Car Posters</h2>
-          
-          <div className="mb-8">
-            <CategoryFilter
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-            />
+        {isLoading && posters.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader size={32} className="animate-spin text-prosterz-600 mr-2" />
+            <span>Loading posters...</span>
           </div>
-          
-          <PosterGrid posters={filteredPosters} />
-        </div>
-        
-        <div className="mt-12 text-center">
-          <Link
-            to="/posters"
-            className="inline-block border-2 border-prosterz-900 text-prosterz-900 px-6 py-3 rounded-md font-medium hover:bg-prosterz-50 transition-colors"
-          >
-            View All Posters
-          </Link>
-        </div>
+        ) : (
+          <>
+            <PosterGrid posters={featuredPosters} title="Featured Car Posters" />
+            
+            <div className="mt-16">
+              <h2 className="text-3xl font-bold mb-8">Browse All Car Posters</h2>
+              
+              <div className="mb-8">
+                <CategoryFilter
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={setSelectedCategory}
+                />
+              </div>
+              
+              <PosterGrid posters={filteredPosters} />
+            </div>
+            
+            <div className="mt-12 text-center">
+              <Link
+                to="/posters"
+                className="inline-block border-2 border-prosterz-900 text-prosterz-900 px-6 py-3 rounded-md font-medium hover:bg-prosterz-50 transition-colors"
+              >
+                View All Posters
+              </Link>
+            </div>
+          </>
+        )}
       </div>
       
       <div className="bg-prosterz-100 py-16 px-4">
