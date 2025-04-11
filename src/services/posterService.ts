@@ -1,4 +1,3 @@
-
 import { Poster, PosterCategory } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -6,6 +5,7 @@ export class PosterService {
   // Get all posters from Supabase
   static async getAllPosters(): Promise<Poster[]> {
     try {
+      console.log('Fetching posters from database...');
       const { data, error } = await supabase
         .from('posters')
         .select('*');
@@ -14,6 +14,8 @@ export class PosterService {
         console.error('Error fetching posters:', error);
         return [];
       }
+      
+      console.log('Posters fetched:', data?.length || 0);
       
       // Map the database fields to our Poster type
       return data.map(poster => ({
@@ -33,6 +35,7 @@ export class PosterService {
   // Add a poster to Supabase
   static async addPoster(poster: Omit<Poster, 'id'>): Promise<Poster> {
     try {
+      console.log('Adding poster to database:', poster);
       const { data, error } = await supabase
         .from('posters')
         .insert([{
@@ -49,6 +52,8 @@ export class PosterService {
         console.error('Error adding poster:', error);
         throw error;
       }
+      
+      console.log('Poster added successfully:', data);
       
       return {
         id: data.id,

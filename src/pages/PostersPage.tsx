@@ -14,7 +14,12 @@ const PostersPage = () => {
   
   // Fetch posters on component mount
   useEffect(() => {
-    fetchPosters();
+    // Force refresh from database on mount
+    const loadPosters = async () => {
+      await fetchPosters();
+    };
+    
+    loadPosters();
   }, [fetchPosters]);
   
   // Show error toast if fetching posters fails
@@ -38,7 +43,7 @@ const PostersPage = () => {
       <div className="container mx-auto py-12 px-4">
         <h1 className="text-4xl font-bold mb-8">Shop Car Posters</h1>
         
-        {isLoading && posters.length === 0 ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader size={32} className="animate-spin text-prosterz-600 mr-2" />
             <span>Loading posters...</span>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Poster } from '@/types';
@@ -34,6 +35,8 @@ const PosterCard = ({ poster }: PosterCardProps) => {
               className="w-full h-full object-cover transition-transform duration-500"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
+                target.onerror = null; // Prevent infinite loop
+                console.error(`Failed to load image: ${poster.image}`);
                 target.src = '/placeholder.svg';
               }}
             />

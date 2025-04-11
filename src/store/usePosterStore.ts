@@ -61,6 +61,9 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       if (poster.category && !get().categories.includes(poster.category as PosterCategory)) {
         get().addCategory(poster.category as PosterCategory);
       }
+
+      // Re-fetch all posters to ensure consistency with database
+      await get().fetchPosters();
     } catch (error) {
       console.error('Error adding poster:', error);
       set({ 

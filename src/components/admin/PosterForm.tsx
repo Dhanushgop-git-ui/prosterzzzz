@@ -76,17 +76,41 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
   };
   
   const uploadImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `${fileName}`;
-    
     try {
-      // For simplicity, we're using the existing URL for demo purposes
-      // In a real app, you'd upload to Supabase Storage
-      return preview;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `posters/${fileName}`;
+      
+      // Convert the image to a Blob
+      const fileData = await file.arrayBuffer();
+      const blob = new Blob([fileData]);
+      
+      // Upload to Supabase Storage if available, otherwise return the preview URL
+      if (supabase) {
+        const { error: uploadError, data } = await supabase.storage
+          .from('posters')
+          .upload(filePath, blob);
+          
+        if (uploadError) {
+          console.error('Error uploading to Supabase:', uploadError);
+          // If upload fails, use the preview URL as fallback
+          return preview;
+        }
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('posters')
+          .getPublicUrl(filePath);
+          
+        return publicUrl;
+      } else {
+        // Fallback for demo or development
+        return preview;
+      }
     } catch (error) {
       console.error('Error uploading image:', error);
-      throw new Error('Failed to upload image');
+      // If anything fails, use the preview URL as fallback
+      return preview;
     }
   };
   
@@ -105,9 +129,8 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
     setIsLoading(true);
     
     try {
-      // For demonstration, use the preview URL
-      // In a real implementation, upload the image to Supabase Storage
-      const imageUrl = preview;
+      // Upload the image and get the URL
+      const imageUrl = await uploadImage(image);
       
       await addPoster({
         title,
