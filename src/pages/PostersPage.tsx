@@ -16,6 +16,7 @@ const PostersPage = () => {
   useEffect(() => {
     // Force refresh from database on mount
     const loadPosters = async () => {
+      console.log('PostersPage: Loading posters');
       await fetchPosters();
     };
     
@@ -35,6 +36,7 @@ const PostersPage = () => {
   
   // Use useMemo to prevent unnecessary recalculations
   const filteredPosters = useMemo(() => {
+    console.log('Filtering posters by category:', selectedCategory);
     return selectedCategory === 'All' ? posters : getPostersByCategory(selectedCategory);
   }, [selectedCategory, posters, getPostersByCategory]);
   

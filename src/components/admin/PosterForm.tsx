@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,27 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  
+  useEffect(() => {
+    // Create posters bucket if it doesn't exist already
+    const createBucket = async () => {
+      try {
+        const { data, error } = await supabase.storage.getBucket('posters');
+        if (error && error.message.includes('does not exist')) {
+          await supabase.storage.createBucket('posters', {
+            public: true,
+            fileSizeLimit: 5242880 // 5MB
+          });
+          console.log('Created posters bucket');
+        }
+      } catch (err) {
+        console.error('Error checking/creating bucket:', err);
+      }
+    };
+    
+    createBucket();
+  }, []);
   
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
@@ -78,39 +99,32 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
   const uploadImage = async (file: File): Promise<string> => {
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `posters/${fileName}`;
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
       
-      // Convert the image to a Blob
-      const fileData = await file.arrayBuffer();
-      const blob = new Blob([fileData]);
-      
-      // Upload to Supabase Storage if available, otherwise return the preview URL
-      if (supabase) {
-        const { error: uploadError, data } = await supabase.storage
-          .from('posters')
-          .upload(filePath, blob);
-          
-        if (uploadError) {
-          console.error('Error uploading to Supabase:', uploadError);
-          // If upload fails, use the preview URL as fallback
-          return preview;
-        }
+      // Upload to Supabase Storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('posters')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
         
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('posters')
-          .getPublicUrl(filePath);
-          
-        return publicUrl;
-      } else {
-        // Fallback for demo or development
-        return preview;
+      if (uploadError) {
+        console.error('Error uploading to Supabase:', uploadError);
+        throw new Error(uploadError.message);
       }
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('posters')
+        .getPublicUrl(filePath);
+        
+      console.log('Image uploaded successfully:', publicUrl);
+      return publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
-      // If anything fails, use the preview URL as fallback
-      return preview;
+      throw error;
     }
   };
   
@@ -127,18 +141,23 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
     }
     
     setIsLoading(true);
+    setUploadProgress(10);
     
     try {
       // Upload the image and get the URL
+      setUploadProgress(30);
       const imageUrl = await uploadImage(image);
+      setUploadProgress(70);
       
       await addPoster({
         title,
-        image: imageUrl,
+        image: imageUrl, // Store the permanent URL
         category,
         priceA3,
         priceA4,
       });
+      
+      setUploadProgress(100);
       
       toast({
         title: 'Poster Added',
@@ -152,6 +171,7 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
       setPriceA4(399);
       setImage(null);
       setPreview('');
+      setUploadProgress(0);
       
       if (onComplete) {
         onComplete();
@@ -297,6 +317,15 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
           )}
         </div>
       </div>
+      
+      {uploadProgress > 0 && uploadProgress < 100 && (
+        <div className="w-full bg-prosterz-100 rounded-full h-2.5">
+          <div 
+            className="bg-prosterz-600 h-2.5 rounded-full transition-all duration-300" 
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
+        </div>
+      )}
       
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? (

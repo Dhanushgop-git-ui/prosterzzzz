@@ -1,3 +1,4 @@
+
 import { Poster, PosterCategory } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -72,6 +73,14 @@ export class PosterService {
   // Delete a poster from Supabase
   static async deletePoster(id: string): Promise<boolean> {
     try {
+      // First get the poster to get the image URL
+      const { data: poster } = await supabase
+        .from('posters')
+        .select('image')
+        .eq('id', id)
+        .single();
+      
+      // Delete the poster from the database
       const { error } = await supabase
         .from('posters')
         .delete()
@@ -80,6 +89,30 @@ export class PosterService {
       if (error) {
         console.error('Error deleting poster:', error);
         return false;
+      }
+      
+      // If poster has an image, try to delete it from storage
+      if (poster && poster.image) {
+        try {
+          // Extract the file path from the public URL
+          const url = new URL(poster.image);
+          const pathSegments = url.pathname.split('/');
+          const fileName = pathSegments[pathSegments.length - 1];
+          
+          if (fileName) {
+            const { error: storageError } = await supabase.storage
+              .from('posters')
+              .remove([fileName]);
+              
+            if (storageError) {
+              console.error('Error deleting image from storage:', storageError);
+              // We still consider the delete successful even if image deletion fails
+            }
+          }
+        } catch (storageError) {
+          console.error('Error parsing image URL or deleting from storage:', storageError);
+          // Continue with deletion even if image deletion fails
+        }
       }
       
       return true;
