@@ -18,6 +18,6 @@ export function formatPrice(price: number): string {
 export function generateWhatsAppLink(message: string): string {
   // Encode the message for URL
   const encodedMessage = encodeURIComponent(message);
-  // The phone number is 7995902773 as specified in requirements
-  return `https://wa.me/917995902773?text=${encodedMessage}`;
+  // Updated phone number as requested
+  return `https://wa.me/919502869924?text=${encodedMessage}`;
 }
