@@ -13,13 +13,15 @@ interface CategorySelectorProps {
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
   onAddCategory: (category: PosterCategory) => void;
+  disabled?: boolean;
 }
 
 const CategorySelector = ({ 
   categories, 
   selectedCategory, 
   onCategoryChange, 
-  onAddCategory 
+  onAddCategory,
+  disabled = false
 }: CategorySelectorProps) => {
   const { toast } = useToast();
   const [newCategory, setNewCategory] = useState<string>('');
@@ -69,11 +71,13 @@ const CategorySelector = ({
               onChange={(e) => setNewCategory(e.target.value)}
               placeholder="Enter new category name"
               className="flex-1"
+              disabled={disabled}
             />
             <Button 
               type="button" 
               onClick={handleAddNewCategory} 
               className="bg-prosterz-800"
+              disabled={disabled}
             >
               Add
             </Button>
@@ -81,6 +85,7 @@ const CategorySelector = ({
               type="button" 
               variant="outline" 
               onClick={() => setShowNewCategoryInput(false)}
+              disabled={disabled}
             >
               Cancel
             </Button>
@@ -96,12 +101,13 @@ const CategorySelector = ({
               size="sm" 
               onClick={() => setShowNewCategoryInput(true)}
               className="flex items-center text-prosterz-600 hover:text-prosterz-900"
+              disabled={disabled}
             >
               <Plus size={16} className="mr-1" />
               New Category
             </Button>
           </div>
-          <Select value={selectedCategory} onValueChange={onCategoryChange} required>
+          <Select value={selectedCategory} onValueChange={onCategoryChange} required disabled={disabled}>
             <SelectTrigger id="category">
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
