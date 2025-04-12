@@ -27,7 +27,9 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   fetchPosters: async () => {
     set({ isLoading: true, error: null });
     try {
+      console.log('Fetching posters from database...');
       const posters = await PosterService.getAllPosters();
+      console.log('Fetched posters:', posters);
       
       // Extract unique categories from posters
       const categories = Array.from(
@@ -51,9 +53,12 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   addPoster: async (poster) => {
     set({ isLoading: true, error: null });
     try {
+      console.log('Adding poster:', poster);
       const newPoster = await PosterService.addPoster(poster);
+      
+      // Update the store with the new poster
       set(state => ({ 
-        posters: [...state.posters, newPoster],
+        posters: [newPoster, ...state.posters],
         isLoading: false 
       }));
       
@@ -61,9 +66,6 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       if (poster.category && !get().categories.includes(poster.category as PosterCategory)) {
         get().addCategory(poster.category as PosterCategory);
       }
-
-      // Re-fetch all posters to ensure consistency with database
-      await get().fetchPosters();
     } catch (error) {
       console.error('Error adding poster:', error);
       set({ 
@@ -126,7 +128,7 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   
   getFeaturedPosters: () => {
     const { posters } = get();
-    return posters.length > 0 ? [posters[0]] : [];
+    return posters.slice(0, 1);
   },
   
   addCategory: (category) => {

@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Pencil, Trash2, Loader } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Pencil, Trash2, Loader, RefreshCw } from 'lucide-react';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Poster } from '@/types';
 import { formatPrice } from '@/lib/utils';
@@ -10,6 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 const PosterList = () => {
   const { toast } = useToast();
   const { posters, deletePoster, isLoading, fetchPosters } = usePosterStore();
+  
+  useEffect(() => {
+    // Load posters when component mounts
+    fetchPosters();
+  }, [fetchPosters]);
   
   const handleDelete = async (id: string, title: string) => {
     if (window.confirm(`Are you sure you want to delete "${title}"?`)) {
@@ -36,12 +41,12 @@ const PosterList = () => {
     });
   };
 
-  const handleRefresh = () => {
-    fetchPosters();
+  const handleRefresh = async () => {
     toast({
       title: 'Refreshing',
       description: 'Fetching the latest posters from the database.',
     });
+    await fetchPosters();
   };
   
   if (isLoading && posters.length === 0) {
@@ -62,13 +67,19 @@ const PosterList = () => {
           size="sm" 
           onClick={handleRefresh}
           disabled={isLoading}
+          className="flex items-center"
         >
           {isLoading ? (
             <>
               <Loader size={16} className="mr-2 animate-spin" />
               Refreshing...
             </>
-          ) : 'Refresh'}
+          ) : (
+            <>
+              <RefreshCw size={16} className="mr-2" />
+              Refresh
+            </>
+          )}
         </Button>
       </div>
       
@@ -98,6 +109,8 @@ const PosterList = () => {
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
+                          target.onerror = null; // Prevent infinite loop
+                          console.error(`Failed to load image: ${poster.image}`);
                           target.src = '/placeholder.svg';
                         }}
                       />

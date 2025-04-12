@@ -9,11 +9,12 @@ export class PosterService {
       console.log('Fetching posters from database...');
       const { data, error } = await supabase
         .from('posters')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching posters:', error);
-        return [];
+        throw error;
       }
       
       console.log('Posters fetched:', data?.length || 0);

@@ -14,14 +14,22 @@ const PostersPage = () => {
   
   // Fetch posters on component mount
   useEffect(() => {
-    // Force refresh from database on mount
     const loadPosters = async () => {
       console.log('PostersPage: Loading posters');
-      await fetchPosters();
+      try {
+        await fetchPosters();
+      } catch (err) {
+        console.error('Error loading posters:', err);
+        toast({
+          title: 'Error',
+          description: 'Failed to load posters. Please try again.',
+          variant: 'destructive'
+        });
+      }
     };
     
     loadPosters();
-  }, [fetchPosters]);
+  }, [fetchPosters, toast]);
   
   // Show error toast if fetching posters fails
   useEffect(() => {
@@ -37,6 +45,7 @@ const PostersPage = () => {
   // Use useMemo to prevent unnecessary recalculations
   const filteredPosters = useMemo(() => {
     console.log('Filtering posters by category:', selectedCategory);
+    console.log('Current posters:', posters.length);
     return selectedCategory === 'All' ? posters : getPostersByCategory(selectedCategory);
   }, [selectedCategory, posters, getPostersByCategory]);
   
@@ -45,7 +54,7 @@ const PostersPage = () => {
       <div className="container mx-auto py-12 px-4">
         <h1 className="text-4xl font-bold mb-8">Shop Car Posters</h1>
         
-        {isLoading ? (
+        {isLoading && posters.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <Loader size={32} className="animate-spin text-prosterz-600 mr-2" />
             <span>Loading posters...</span>

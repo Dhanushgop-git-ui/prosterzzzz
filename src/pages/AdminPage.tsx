@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/types';
 import { usePosterStore } from '@/store/usePosterStore';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -21,9 +22,41 @@ const AdminPage = () => {
   
   const { fetchPosters, isLoading, error, posters } = usePosterStore();
   
+  // Ensure storage bucket exists
+  useEffect(() => {
+    const ensureStorageBucketExists = async () => {
+      try {
+        // Check if the posters bucket exists
+        const { data, error } = await supabase.storage.getBucket('posters');
+        
+        // If bucket doesn't exist, create it
+        if (error && error.message.includes('does not exist')) {
+          await supabase.storage.createBucket('posters', {
+            public: true,
+            fileSizeLimit: 10485760 // 10MB
+          });
+          console.log('Created posters bucket');
+        }
+      } catch (err) {
+        console.error('Error checking/creating bucket:', err);
+      }
+    };
+    
+    ensureStorageBucketExists();
+  }, []);
+  
   // Fetch posters on load
   useEffect(() => {
-    fetchPosters();
+    const loadPosters = async () => {
+      console.log('AdminPage: Loading posters');
+      try {
+        await fetchPosters();
+      } catch (err) {
+        console.error('Error loading posters:', err);
+      }
+    };
+    
+    loadPosters();
   }, [fetchPosters]);
   
   // Automatically log in as admin for demo purposes
@@ -56,6 +89,14 @@ const AdminPage = () => {
     }
   }, [error, toast]);
   
+  const handleRefresh = async () => {
+    toast({
+      title: "Refreshing Data",
+      description: "Fetching the latest posters from the database."
+    });
+    await fetchPosters();
+  };
+  
   if (!isAdmin()) {
     return (
       <Layout>
@@ -71,7 +112,22 @@ const AdminPage = () => {
   return (
     <Layout>
       <div className="container mx-auto py-12 px-4">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader size={16} className="mr-2 animate-spin" />
+                Refreshing...
+              </>
+            ) : 'Refresh Data'}
+          </Button>
+        </div>
         
         {isLoading && posters.length === 0 ? (
           <div className="flex items-center justify-center py-12">

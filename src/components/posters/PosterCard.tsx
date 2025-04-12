@@ -4,12 +4,15 @@ import { Link } from 'react-router-dom';
 import { Poster } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { ImageOff } from 'lucide-react';
 
 interface PosterCardProps {
   poster: Poster;
 }
 
 const PosterCard = ({ poster }: PosterCardProps) => {
+  const [imageError, setImageError] = React.useState(false);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -29,17 +32,21 @@ const PosterCard = ({ poster }: PosterCardProps) => {
             whileHover={{ scale: 1.08 }}
             transition={{ duration: 0.5 }}
           >
-            <img
-              src={poster.image}
-              alt={poster.title}
-              className="w-full h-full object-cover transition-transform duration-500"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null; // Prevent infinite loop
-                console.error(`Failed to load image: ${poster.image}`);
-                target.src = '/placeholder.svg';
-              }}
-            />
+            {imageError ? (
+              <div className="w-full h-full flex items-center justify-center bg-prosterz-50">
+                <ImageOff className="h-12 w-12 text-prosterz-300" />
+              </div>
+            ) : (
+              <img
+                src={poster.image}
+                alt={poster.title}
+                className="w-full h-full object-cover transition-transform duration-500"
+                onError={(e) => {
+                  console.error(`Failed to load image: ${poster.image}`);
+                  setImageError(true);
+                }}
+              />
+            )}
           </motion.div>
           <div className="absolute top-2 right-2">
             <span className={`category-pill ${getCategoryColor(poster.category)}`}>
