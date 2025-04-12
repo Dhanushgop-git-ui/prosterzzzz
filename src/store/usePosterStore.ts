@@ -8,7 +8,8 @@ interface PosterStore {
   categories: PosterCategory[];
   isLoading: boolean;
   error: string | null;
-  fetchPosters: () => Promise<void>;
+  retryCount: number;
+  fetchPosters: (forceRetry?: boolean) => Promise<void>;
   addPoster: (poster: Omit<Poster, 'id'>) => Promise<void>;
   updatePoster: (id: string, posterData: Partial<Poster>) => Promise<void>;
   deletePoster: (id: string) => Promise<void>;
@@ -24,9 +25,17 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
   categories: ['Cars'],
   isLoading: false,
   error: null,
+  retryCount: 0,
   
-  fetchPosters: async () => {
-    set({ isLoading: true, error: null });
+  fetchPosters: async (forceRetry = false) => {
+    const currentState = get();
+    
+    // Only reset error if we're doing a forced retry
+    if (forceRetry) {
+      set({ error: null });
+    }
+    
+    set({ isLoading: true });
     try {
       console.log('Fetching posters from database...');
       const posters = await PosterService.getAllPosters();
@@ -40,13 +49,25 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       set({ 
         posters,
         categories: categories.length > 0 ? categories : ['Cars'],
-        isLoading: false 
+        isLoading: false,
+        retryCount: 0, // Reset retry count on success
       });
     } catch (error) {
       console.error('Error fetching posters:', error);
+      
+      // Increment retry count
+      const newRetryCount = currentState.retryCount + 1;
+      
+      // Set error message based on retry count
+      let errorMsg = 'Failed to fetch posters. Please try again.';
+      if (newRetryCount > 3) {
+        errorMsg = 'Multiple attempts to load posters failed. Please check your network connection or try again later.';
+      }
+      
       set({ 
-        error: 'Failed to fetch posters. Please try again.',
-        isLoading: false 
+        error: errorMsg,
+        isLoading: false,
+        retryCount: newRetryCount,
       });
     }
   },
@@ -66,7 +87,8 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       // Update the store with the new poster
       set(state => ({ 
         posters: [newPoster, ...state.posters],
-        isLoading: false 
+        isLoading: false,
+        error: null,
       }));
       
       // Add category if it's new

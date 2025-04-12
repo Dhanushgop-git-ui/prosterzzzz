@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, List, Loader, Upload } from 'lucide-react';
+import { Plus, List, Loader, Upload, AlertTriangle, RefreshCw } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import PosterForm from '@/components/admin/PosterForm';
 import PosterList from '@/components/admin/PosterList';
@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { User } from '@/types';
 import { usePosterStore } from '@/store/usePosterStore';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ensureStorageBucketExists } from '@/utils/imageUploader';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -20,30 +22,27 @@ const AdminPage = () => {
   const { user, isAdmin } = useAuthStore();
   const [activeTab, setActiveTab] = useState('list');
   
-  const { fetchPosters, isLoading, error, posters } = usePosterStore();
+  const { fetchPosters, isLoading, error, posters, setError } = usePosterStore();
+  const [storageBucketChecked, setStorageBucketChecked] = useState(false);
   
-  // Ensure storage bucket exists
+  // Check and create storage bucket if needed
   useEffect(() => {
-    const ensureStorageBucketExists = async () => {
+    const checkStorageBucket = async () => {
+      if (storageBucketChecked) return;
+      
       try {
-        // Check if the posters bucket exists
-        const { data, error } = await supabase.storage.getBucket('posters');
-        
-        // If bucket doesn't exist, create it
-        if (error && error.message.includes('does not exist')) {
-          await supabase.storage.createBucket('posters', {
-            public: true,
-            fileSizeLimit: 10485760 // 10MB
-          });
-          console.log('Created posters bucket');
-        }
+        console.log('AdminPage: Checking if storage bucket exists');
+        await ensureStorageBucketExists();
+        setStorageBucketChecked(true);
+        console.log('AdminPage: Storage bucket confirmed');
       } catch (err) {
-        console.error('Error checking/creating bucket:', err);
+        console.error('AdminPage: Error checking/creating bucket:', err);
+        // Don't set an error here, we'll let the poster fetch handle errors
       }
     };
     
-    ensureStorageBucketExists();
-  }, []);
+    checkStorageBucket();
+  }, [storageBucketChecked]);
   
   // Fetch posters on load
   useEffect(() => {
@@ -57,7 +56,7 @@ const AdminPage = () => {
     };
     
     loadPosters();
-  }, [fetchPosters]);
+  }, [fetchPosters, storageBucketChecked]);
   
   // Automatically log in as admin for demo purposes
   useEffect(() => {
@@ -94,7 +93,19 @@ const AdminPage = () => {
       title: "Refreshing Data",
       description: "Fetching the latest posters from the database."
     });
-    await fetchPosters();
+    
+    // Try to check storage bucket again
+    if (!storageBucketChecked) {
+      try {
+        await ensureStorageBucketExists();
+        setStorageBucketChecked(true);
+      } catch (err) {
+        console.error('Error during refresh bucket check:', err);
+      }
+    }
+    
+    // Then fetch posters, with forced retry
+    await fetchPosters(true);
   };
   
   if (!isAdmin()) {
@@ -119,15 +130,40 @@ const AdminPage = () => {
             size="sm" 
             onClick={handleRefresh}
             disabled={isLoading}
+            className="flex items-center gap-2"
           >
             {isLoading ? (
               <>
-                <Loader size={16} className="mr-2 animate-spin" />
+                <Loader size={16} className="animate-spin" />
                 Refreshing...
               </>
-            ) : 'Refresh Data'}
+            ) : (
+              <>
+                <RefreshCw size={16} />
+                Refresh Data
+              </>
+            )}
           </Button>
         </div>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription className="flex flex-col gap-2">
+              <p>{error}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh} 
+                disabled={isLoading}
+                className="mt-2 w-fit"
+              >
+                {isLoading ? 'Trying again...' : 'Try Again'}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         
         {isLoading && posters.length === 0 ? (
           <div className="flex items-center justify-center py-12">

@@ -4,9 +4,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { ensureStorageBucketExists } from '@/utils/imageUploader';
 
 export class PosterService {
+  private static bucketInitialized = false;
+  
   // Ensure bucket exists on initialization
   static async init() {
-    await ensureStorageBucketExists();
+    if (this.bucketInitialized) return;
+    
+    try {
+      await ensureStorageBucketExists();
+      this.bucketInitialized = true;
+      console.log('PosterService initialized, bucket is ready');
+    } catch (err) {
+      console.error('Failed to initialize PosterService:', err);
+      // Even if this fails, we'll let some operations continue
+      // and try again later
+    }
   }
   
   // Get all posters from Supabase
@@ -14,8 +26,14 @@ export class PosterService {
     try {
       console.log('Fetching posters from database...');
       
-      // Ensure the storage bucket exists
-      await ensureStorageBucketExists();
+      // Try to ensure the storage bucket exists - don't throw on failure
+      try {
+        if (!this.bucketInitialized) {
+          await this.init();
+        }
+      } catch (bucketErr) {
+        console.warn('Note: Storage bucket initialization failed, but proceeding with poster fetch');
+      }
       
       const { data, error } = await supabase
         .from('posters')
@@ -48,6 +66,11 @@ export class PosterService {
   static async addPoster(poster: Omit<Poster, 'id'>): Promise<Poster> {
     try {
       console.log('Adding poster to database:', poster);
+      
+      // Ensure bucket is initialized before adding a poster
+      if (!this.bucketInitialized) {
+        await this.init();
+      }
       
       // Validate required fields
       if (!poster.title) throw new Error('Poster title is required');
@@ -179,7 +202,7 @@ export class PosterService {
   }
 }
 
-// Initialize the storage bucket when the service is loaded
+// Initialize the storage bucket when the service is loaded, but don't stop execution if it fails
 PosterService.init().catch(err => {
-  console.error('Failed to initialize PosterService:', err);
+  console.warn('PosterService initialization encountered an issue, will retry later:', err);
 });

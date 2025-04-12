@@ -17,7 +17,7 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
       .from('posters')
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true // Change to true to allow overwrites if needed
+        upsert: true // Allow overwrites if needed
       });
       
     if (uploadError) {
@@ -41,31 +41,26 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
 export const ensureStorageBucketExists = async (): Promise<void> => {
   try {
     console.log('Checking if posters bucket exists...');
-    // Check if the posters bucket exists
-    const { data, error } = await supabase.storage.getBucket('posters');
     
-    // If bucket doesn't exist, create it
-    if (error && error.message.includes('does not exist')) {
-      console.log('Posters bucket does not exist. Creating it now...');
-      const { data: bucketData, error: createError } = await supabase.storage.createBucket('posters', {
-        public: true,
-        fileSizeLimit: 10485760 // 10MB
-      });
-      
-      if (createError) {
+    // Try to create the bucket - if it exists, this will fail but we can catch that error
+    const { data: createData, error: createError } = await supabase.storage.createBucket('posters', {
+      public: true,
+      fileSizeLimit: 10485760 // 10MB
+    });
+    
+    if (createError) {
+      // If the error is not "Bucket already exists", it's a real error
+      if (!createError.message.includes('already exists')) {
         console.error('Error creating bucket:', createError);
-        throw new Error(`Failed to create storage bucket: ${createError.message}`);
+        // Try to update the bucket anyway
+      } else {
+        console.log('Bucket already exists, updating settings');
       }
-      
-      console.log('Created posters bucket successfully:', bucketData);
-    } else if (error) {
-      console.error('Error checking bucket:', error);
-      throw new Error(`Error checking storage bucket: ${error.message}`);
     } else {
-      console.log('Posters bucket exists:', data?.name);
+      console.log('Created posters bucket successfully');
     }
     
-    // Ensure the bucket is public
+    // Update bucket settings regardless of create outcome
     const { error: updateError } = await supabase.storage.updateBucket('posters', {
       public: true,
       fileSizeLimit: 10485760 // 10MB
@@ -73,7 +68,11 @@ export const ensureStorageBucketExists = async (): Promise<void> => {
     
     if (updateError) {
       console.error('Error updating bucket to public:', updateError);
+      throw new Error(`Failed to update bucket: ${updateError.message}`);
     }
+    
+    console.log('Bucket settings updated successfully');
+    
   } catch (err) {
     console.error('Error in ensureStorageBucketExists:', err);
     throw err;
