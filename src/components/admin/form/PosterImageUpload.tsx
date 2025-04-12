@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Label } from '@/components/ui/label';
 import { Upload, ImageOff } from 'lucide-react';
@@ -8,9 +8,15 @@ interface PosterImageUploadProps {
   onImageChange: (file: File | null) => void;
   onPreviewChange: (preview: string) => void;
   preview: string;
+  disabled?: boolean;
 }
 
-const PosterImageUpload = ({ onImageChange, onPreviewChange, preview }: PosterImageUploadProps) => {
+const PosterImageUpload = ({ 
+  onImageChange, 
+  onPreviewChange, 
+  preview,
+  disabled = false
+}: PosterImageUploadProps) => {
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png', '.webp'],
@@ -23,6 +29,7 @@ const PosterImageUpload = ({ onImageChange, onPreviewChange, preview }: PosterIm
         onPreviewChange(URL.createObjectURL(file));
       }
     },
+    disabled
   });
 
   return (
@@ -30,7 +37,9 @@ const PosterImageUpload = ({ onImageChange, onPreviewChange, preview }: PosterIm
       <Label>Poster Image</Label>
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors ${
+        className={`border-2 border-dashed rounded-md p-6 text-center transition-colors ${
+          disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+        } ${
           preview ? 'border-prosterz-300' : 'border-prosterz-200 hover:border-prosterz-300'
         }`}
       >
@@ -44,7 +53,7 @@ const PosterImageUpload = ({ onImageChange, onPreviewChange, preview }: PosterIm
               className="mx-auto max-h-64 object-contain"
             />
             <p className="text-sm text-prosterz-600">
-              Click or drag to replace the image
+              {disabled ? 'Image upload in progress...' : 'Click or drag to replace the image'}
             </p>
           </div>
         ) : (

@@ -15,6 +15,7 @@ interface PosterStore {
   getPostersByCategory: (category: string) => Poster[];
   getFeaturedPosters: () => Poster[];
   addCategory: (category: PosterCategory) => void;
+  setError: (error: string | null) => void;
 }
 
 // Create the store with Supabase integration
@@ -54,6 +55,12 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       console.log('Adding poster:', poster);
+      
+      // Validate that we have all required data
+      if (!poster.title || !poster.category || !poster.image) {
+        throw new Error('Missing required poster information');
+      }
+      
       const newPoster = await PosterService.addPoster(poster);
       
       // Update the store with the new poster
@@ -68,8 +75,9 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       }
     } catch (error) {
       console.error('Error adding poster:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add poster. Please try again.';
       set({ 
-        error: 'Failed to add poster. Please try again.',
+        error: errorMessage,
         isLoading: false 
       });
     }
@@ -139,4 +147,8 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       return { categories: [...state.categories, category] };
     });
   },
+  
+  setError: (error) => {
+    set({ error });
+  }
 }));

@@ -18,7 +18,7 @@ interface PosterFormProps {
 
 const PosterForm = ({ onComplete }: PosterFormProps) => {
   const { toast } = useToast();
-  const { addPoster, categories, addCategory } = usePosterStore();
+  const { addPoster, categories, addCategory, error, setError } = usePosterStore();
   
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string>('');
@@ -31,18 +31,80 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
   
   // Create posters bucket if it doesn't exist already
   useEffect(() => {
-    ensureStorageBucketExists();
-  }, []);
+    const initStorage = async () => {
+      try {
+        await ensureStorageBucketExists();
+      } catch (error) {
+        console.error('Failed to initialize storage:', error);
+        toast({
+          title: 'Storage Error',
+          description: 'Failed to initialize storage. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    };
+    
+    initStorage();
+  }, [toast]);
+  
+  // Reset the form when error changes
+  useEffect(() => {
+    if (error) {
+      setIsLoading(false);
+      setUploadProgress(0);
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+      setError(null); // Clear the error after showing toast
+    }
+  }, [error, toast, setError]);
+  
+  const validateForm = (): boolean => {
+    if (!title.trim()) {
+      toast({
+        title: 'Missing Title',
+        description: 'Please enter a title for the poster.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    if (!category.trim()) {
+      toast({
+        title: 'Missing Category',
+        description: 'Please select or enter a category for the poster.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    if (!image) {
+      toast({
+        title: 'Missing Image',
+        description: 'Please upload an image for the poster.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    if (priceA3 <= 0 || priceA4 <= 0) {
+      toast({
+        title: 'Invalid Pricing',
+        description: 'Please enter valid prices for A3 and A4 formats.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    return true;
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!image || !title || !category || !priceA3 || !priceA4) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please fill out all fields and upload an image.',
-        variant: 'destructive',
-      });
+    if (!validateForm()) {
       return;
     }
     
@@ -52,12 +114,15 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
     try {
       // Upload the image and get the URL
       setUploadProgress(30);
+      console.log('Uploading image to Supabase...');
       const imageUrl = await uploadImageToSupabase(image);
       setUploadProgress(70);
+      console.log('Image uploaded successfully, URL:', imageUrl);
       
+      console.log('Adding poster to database...');
       await addPoster({
         title,
-        image: imageUrl, // Store the permanent URL
+        image: imageUrl,
         category,
         priceA3,
         priceA4,
@@ -83,10 +148,10 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
         onComplete();
       }
     } catch (error) {
-      console.error('Error adding poster:', error);
+      console.error('Error in form submission:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add poster. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to add poster. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -104,6 +169,7 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter poster title"
           required
+          disabled={isLoading}
         />
       </div>
       
@@ -112,6 +178,7 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
         selectedCategory={category}
         onCategoryChange={setCategory}
         onAddCategory={addCategory}
+        disabled={isLoading}
       />
       
       <PricingInputs 
@@ -125,6 +192,7 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
         onImageChange={setImage}
         onPreviewChange={setPreview}
         preview={preview}
+        disabled={isLoading}
       />
       
       {uploadProgress > 0 && uploadProgress < 100 && (

@@ -16,6 +16,13 @@ const PricingInputs = ({
   onPriceA3Change, 
   onPriceA4Change 
 }: PricingInputsProps) => {
+  
+  const handlePriceChange = (setter: (price: number) => void, value: string) => {
+    const numValue = parseInt(value, 10);
+    // Ensure we have a valid positive number
+    setter(isNaN(numValue) || numValue < 1 ? 1 : numValue);
+  };
+  
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
@@ -25,7 +32,7 @@ const PricingInputs = ({
           type="number"
           min={1}
           value={priceA3}
-          onChange={(e) => onPriceA3Change(Number(e.target.value))}
+          onChange={(e) => handlePriceChange(onPriceA3Change, e.target.value)}
           required
         />
       </div>
@@ -36,7 +43,7 @@ const PricingInputs = ({
           type="number"
           min={1}
           value={priceA4}
-          onChange={(e) => onPriceA4Change(Number(e.target.value))}
+          onChange={(e) => handlePriceChange(onPriceA4Change, e.target.value)}
           required
         />
       </div>

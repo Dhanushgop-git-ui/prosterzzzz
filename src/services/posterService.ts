@@ -1,12 +1,22 @@
 
 import { Poster, PosterCategory } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { ensureStorageBucketExists } from '@/utils/imageUploader';
 
 export class PosterService {
+  // Ensure bucket exists on initialization
+  static async init() {
+    await ensureStorageBucketExists();
+  }
+  
   // Get all posters from Supabase
   static async getAllPosters(): Promise<Poster[]> {
     try {
       console.log('Fetching posters from database...');
+      
+      // Ensure the storage bucket exists
+      await ensureStorageBucketExists();
+      
       const { data, error } = await supabase
         .from('posters')
         .select('*')
@@ -30,7 +40,7 @@ export class PosterService {
       }));
     } catch (error) {
       console.error('Error fetching posters:', error);
-      return [];
+      throw error;
     }
   }
   
@@ -38,6 +48,14 @@ export class PosterService {
   static async addPoster(poster: Omit<Poster, 'id'>): Promise<Poster> {
     try {
       console.log('Adding poster to database:', poster);
+      
+      // Validate required fields
+      if (!poster.title) throw new Error('Poster title is required');
+      if (!poster.image) throw new Error('Poster image is required');
+      if (!poster.category) throw new Error('Poster category is required');
+      if (!poster.priceA3 || poster.priceA3 <= 0) throw new Error('Valid A3 price is required');
+      if (!poster.priceA4 || poster.priceA4 <= 0) throw new Error('Valid A4 price is required');
+      
       const { data, error } = await supabase
         .from('posters')
         .insert([{
@@ -160,3 +178,8 @@ export class PosterService {
     }
   }
 }
+
+// Initialize the storage bucket when the service is loaded
+PosterService.init().catch(err => {
+  console.error('Failed to initialize PosterService:', err);
+});
