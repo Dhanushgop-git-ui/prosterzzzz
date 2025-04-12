@@ -1,10 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Try to upload image even if bucket creation fails
 export const uploadImageToSupabase = async (file: File): Promise<string> => {
   try {
-    // First, ensure the bucket exists
-    await ensureStorageBucketExists();
+    // Try to ensure the bucket exists, but don't throw if it fails
+    try {
+      await ensureStorageBucketExists();
+    } catch (err) {
+      console.warn('Warning: Could not verify storage bucket, but will attempt upload anyway:', err);
+    }
     
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
@@ -21,6 +26,11 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
       });
       
     if (uploadError) {
+      // Special case: If the bucket doesn't exist but we try to upload anyway
+      if (uploadError.message.includes('Bucket not found')) {
+        throw new Error('Storage bucket not found. Please contact your administrator to set up the Supabase storage bucket.');
+      }
+      
       console.error('Error uploading to Supabase:', uploadError);
       throw new Error(`Upload error: ${uploadError.message}`);
     }
@@ -38,44 +48,65 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
   }
 };
 
-export const ensureStorageBucketExists = async (): Promise<void> => {
+// Modified to not throw errors in case of RLS policy issues
+export const ensureStorageBucketExists = async (): Promise<boolean> => {
   try {
     console.log('Checking if posters bucket exists...');
     
-    // Try to create the bucket - if it exists, this will fail but we can catch that error
-    const { data: createData, error: createError } = await supabase.storage.createBucket('posters', {
-      public: true,
-      fileSizeLimit: 10485760 // 10MB
-    });
+    // Try to get bucket information first
+    const { data: getBucketData, error: getBucketError } = await supabase.storage.getBucket('posters');
     
-    if (createError) {
-      // If the error is not "Bucket already exists", it's a real error
-      if (!createError.message.includes('already exists')) {
-        console.error('Error creating bucket:', createError);
-        // Try to update the bucket anyway
-      } else {
-        console.log('Bucket already exists, updating settings');
+    // If bucket exists, we're good to go
+    if (!getBucketError && getBucketData) {
+      console.log('Bucket exists:', getBucketData);
+      
+      // Update bucket to ensure it's public
+      try {
+        await supabase.storage.updateBucket('posters', {
+          public: true,
+          fileSizeLimit: 10485760 // 10MB
+        });
+        console.log('Bucket settings updated successfully');
+      } catch (updateErr) {
+        console.warn('Could not update bucket settings, but proceeding:', updateErr);
       }
-    } else {
+      
+      return true;
+    }
+    
+    // Try to create the bucket
+    try {
+      const { data: createData, error: createError } = await supabase.storage.createBucket('posters', {
+        public: true,
+        fileSizeLimit: 10485760 // 10MB
+      });
+      
+      if (createError) {
+        // If it's an RLS policy error, we log it but don't throw
+        if (createError.message.includes('violates row-level security policy')) {
+          console.warn('Could not create bucket due to RLS policy. User may not have permission:', createError);
+          return false;
+        }
+        
+        // If "already exists", that's fine
+        if (createError.message.includes('already exists')) {
+          console.log('Bucket already exists');
+          return true;
+        }
+        
+        console.error('Error creating bucket:', createError);
+        return false;
+      }
+      
       console.log('Created posters bucket successfully');
+      return true;
+    } catch (err) {
+      console.error('Exception during bucket creation:', err);
+      return false;
     }
-    
-    // Update bucket settings regardless of create outcome
-    const { error: updateError } = await supabase.storage.updateBucket('posters', {
-      public: true,
-      fileSizeLimit: 10485760 // 10MB
-    });
-    
-    if (updateError) {
-      console.error('Error updating bucket to public:', updateError);
-      throw new Error(`Failed to update bucket: ${updateError.message}`);
-    }
-    
-    console.log('Bucket settings updated successfully');
-    
   } catch (err) {
     console.error('Error in ensureStorageBucketExists:', err);
-    throw err;
+    return false;
   }
 };
 

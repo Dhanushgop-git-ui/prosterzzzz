@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Pencil, Trash2, Loader, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Pencil, Trash2, Loader, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Poster } from '@/types';
 import { formatPrice } from '@/lib/utils';
@@ -86,7 +86,11 @@ const PosterList = () => {
       
       {error && (
         <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
+          {error.includes('Storage configuration') || error.includes('Bucket not found') ? (
+            <ShieldAlert className="h-4 w-4" />
+          ) : (
+            <AlertTriangle className="h-4 w-4" />
+          )}
           <AlertTitle>Error</AlertTitle>
           <AlertDescription className="flex flex-col gap-2">
             <p>{error}</p>
@@ -101,7 +105,9 @@ const PosterList = () => {
             </Button>
             {retryCount > 2 && (
               <p className="text-xs mt-1">
-                Tip: This could be due to Supabase storage configuration. The app will continue to attempt to create the required storage bucket.
+                {error.includes('Storage configuration') 
+                  ? 'This is likely due to Supabase storage permissions. An administrator needs to create the posters bucket with public access.'
+                  : 'This could be due to Supabase storage configuration. The app will continue to attempt to create the required storage bucket.'}
               </p>
             )}
           </AlertDescription>

@@ -1,23 +1,28 @@
 
-import { Poster, PosterCategory } from '@/types';
+import { Poster } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { ensureStorageBucketExists } from '@/utils/imageUploader';
 
 export class PosterService {
   private static bucketInitialized = false;
   
-  // Ensure bucket exists on initialization
+  // Non-blocking bucket initialization that won't fail the app
   static async init() {
     if (this.bucketInitialized) return;
     
     try {
-      await ensureStorageBucketExists();
-      this.bucketInitialized = true;
-      console.log('PosterService initialized, bucket is ready');
+      // Only mark as initialized if successful
+      const success = await ensureStorageBucketExists();
+      this.bucketInitialized = success;
+      
+      if (success) {
+        console.log('PosterService initialized, bucket is ready');
+      } else {
+        console.warn('PosterService initialized but bucket may not be available');
+      }
     } catch (err) {
-      console.error('Failed to initialize PosterService:', err);
+      console.error('Failed to initialize PosterService storage:', err);
       // Even if this fails, we'll let some operations continue
-      // and try again later
     }
   }
   
@@ -26,13 +31,13 @@ export class PosterService {
     try {
       console.log('Fetching posters from database...');
       
-      // Try to ensure the storage bucket exists - don't throw on failure
-      try {
-        if (!this.bucketInitialized) {
+      // Try to initialize storage only as a best effort
+      if (!this.bucketInitialized) {
+        try {
           await this.init();
+        } catch (bucketErr) {
+          console.warn('Note: Storage initialization failed, but proceeding with poster fetch');
         }
-      } catch (bucketErr) {
-        console.warn('Note: Storage bucket initialization failed, but proceeding with poster fetch');
       }
       
       const { data, error } = await supabase
@@ -42,10 +47,15 @@ export class PosterService {
       
       if (error) {
         console.error('Error fetching posters:', error);
-        throw error;
+        throw new Error(`Database error: ${error.message}`);
       }
       
-      console.log('Posters fetched:', data?.length || 0);
+      if (!data || data.length === 0) {
+        console.log('No posters found in database');
+        return [];
+      }
+      
+      console.log('Posters fetched:', data.length);
       
       // Map the database fields to our Poster type
       return data.map(poster => ({
@@ -62,14 +72,18 @@ export class PosterService {
     }
   }
   
-  // Add a poster to Supabase
+  // Add a poster to Supabase - this will still attempt upload even if bucket isn't ready
   static async addPoster(poster: Omit<Poster, 'id'>): Promise<Poster> {
     try {
       console.log('Adding poster to database:', poster);
       
-      // Ensure bucket is initialized before adding a poster
+      // Try to initialize, but don't block if it fails
       if (!this.bucketInitialized) {
-        await this.init();
+        try {
+          await this.init();
+        } catch (err) {
+          console.warn('Storage initialization failed during addPoster, but proceeding anyway');
+        }
       }
       
       // Validate required fields
@@ -93,7 +107,11 @@ export class PosterService {
       
       if (error) {
         console.error('Error adding poster:', error);
-        throw error;
+        throw new Error(`Database error: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error('No data returned after adding poster');
       }
       
       console.log('Poster added successfully:', data);
@@ -133,7 +151,7 @@ export class PosterService {
         return false;
       }
       
-      // If poster has an image, try to delete it from storage
+      // If poster has an image, try to delete it from storage but don't fail if we can't
       if (poster && poster.image) {
         try {
           // Extract the file path from the public URL
@@ -147,13 +165,11 @@ export class PosterService {
               .remove([fileName]);
               
             if (storageError) {
-              console.error('Error deleting image from storage:', storageError);
-              // We still consider the delete successful even if image deletion fails
+              console.warn('Could not delete image file, but poster was deleted:', storageError);
             }
           }
         } catch (storageError) {
-          console.error('Error parsing image URL or deleting from storage:', storageError);
-          // Continue with deletion even if image deletion fails
+          console.warn('Error parsing image URL or deleting from storage, but poster was deleted:', storageError);
         }
       }
       
@@ -202,7 +218,7 @@ export class PosterService {
   }
 }
 
-// Initialize the storage bucket when the service is loaded, but don't stop execution if it fails
+// Initialize in background, but don't block app startup if it fails
 PosterService.init().catch(err => {
   console.warn('PosterService initialization encountered an issue, will retry later:', err);
 });

@@ -58,9 +58,15 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       // Increment retry count
       const newRetryCount = currentState.retryCount + 1;
       
-      // Set error message based on retry count
+      // Set error message based on retry count and specific error details
       let errorMsg = 'Failed to fetch posters. Please try again.';
-      if (newRetryCount > 3) {
+      
+      // Check for specific error messages
+      const errorStr = error instanceof Error ? error.message : String(error);
+      
+      if (errorStr.includes('Bucket not found') || errorStr.includes('violates row-level security policy')) {
+        errorMsg = 'Storage configuration issue detected. Please contact your administrator to set up the Supabase storage bucket.';
+      } else if (newRetryCount > 3) {
         errorMsg = 'Multiple attempts to load posters failed. Please check your network connection or try again later.';
       }
       
@@ -97,7 +103,18 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       }
     } catch (error) {
       console.error('Error adding poster:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add poster. Please try again.';
+      
+      let errorMessage = 'Failed to add poster. Please try again.';
+      
+      // Provide more specific error messages for common issues
+      if (error instanceof Error) {
+        if (error.message.includes('Bucket not found') || error.message.includes('violates row-level security policy')) {
+          errorMessage = 'Storage configuration issue. Please contact your administrator to set up the Supabase storage bucket.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       set({ 
         error: errorMessage,
         isLoading: false 
@@ -121,11 +138,13 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
         if (posterData.category && !get().categories.includes(posterData.category as PosterCategory)) {
           get().addCategory(posterData.category as PosterCategory);
         }
+      } else {
+        throw new Error('Failed to update poster');
       }
     } catch (error) {
       console.error('Error updating poster:', error);
       set({ 
-        error: 'Failed to update poster. Please try again.',
+        error: error instanceof Error ? error.message : 'Failed to update poster. Please try again.',
         isLoading: false 
       });
     }
@@ -140,11 +159,13 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
           posters: state.posters.filter(poster => poster.id !== id),
           isLoading: false
         }));
+      } else {
+        throw new Error('Failed to delete poster');
       }
     } catch (error) {
       console.error('Error deleting poster:', error);
       set({ 
-        error: 'Failed to delete poster. Please try again.',
+        error: error instanceof Error ? error.message : 'Failed to delete poster. Please try again.',
         isLoading: false 
       });
     }

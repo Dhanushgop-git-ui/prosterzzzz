@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, List, Loader, Upload, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Plus, List, Loader, Upload, AlertTriangle, RefreshCw, ShieldAlert } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import PosterForm from '@/components/admin/PosterForm';
 import PosterList from '@/components/admin/PosterList';
@@ -24,6 +24,7 @@ const AdminPage = () => {
   
   const { fetchPosters, isLoading, error, posters, setError } = usePosterStore();
   const [storageBucketChecked, setStorageBucketChecked] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
   
   // Check and create storage bucket if needed
   useEffect(() => {
@@ -32,12 +33,20 @@ const AdminPage = () => {
       
       try {
         console.log('AdminPage: Checking if storage bucket exists');
-        await ensureStorageBucketExists();
+        const success = await ensureStorageBucketExists();
         setStorageBucketChecked(true);
-        console.log('AdminPage: Storage bucket confirmed');
+        
+        if (success) {
+          console.log('AdminPage: Storage bucket confirmed');
+          setStorageError(null);
+        } else {
+          console.warn('AdminPage: Storage bucket could not be created/updated');
+          setStorageError('Storage bucket could not be created due to permissions. Administrator assistance is required.');
+        }
       } catch (err) {
         console.error('AdminPage: Error checking/creating bucket:', err);
-        // Don't set an error here, we'll let the poster fetch handle errors
+        setStorageError('Error initializing storage. Please try again later or contact an administrator.');
+        // We'll let the poster fetch handle display of errors
       }
     };
     
@@ -91,17 +100,28 @@ const AdminPage = () => {
   const handleRefresh = async () => {
     toast({
       title: "Refreshing Data",
-      description: "Fetching the latest posters from the database."
+      description: "Checking storage bucket and fetching the latest posters."
     });
     
+    // Reset states
+    setStorageError(null);
+    setStorageBucketChecked(false);
+    
     // Try to check storage bucket again
-    if (!storageBucketChecked) {
-      try {
-        await ensureStorageBucketExists();
-        setStorageBucketChecked(true);
-      } catch (err) {
-        console.error('Error during refresh bucket check:', err);
+    try {
+      const success = await ensureStorageBucketExists();
+      setStorageBucketChecked(true);
+      
+      if (success) {
+        console.log('AdminPage: Storage bucket confirmed on refresh');
+        setStorageError(null);
+      } else {
+        console.warn('AdminPage: Storage bucket could not be created/updated on refresh');
+        setStorageError('Storage bucket could not be created. Administrator assistance is required.');
       }
+    } catch (err) {
+      console.error('Error during refresh bucket check:', err);
+      setStorageError('Error initializing storage. Please try again later.');
     }
     
     // Then fetch posters, with forced retry
@@ -146,7 +166,32 @@ const AdminPage = () => {
           </Button>
         </div>
         
-        {error && (
+        {/* Specific storage error message */}
+        {storageError && (
+          <Alert variant="destructive" className="mb-6">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>Storage Configuration Issue</AlertTitle>
+            <AlertDescription className="flex flex-col gap-2">
+              <p>{storageError}</p>
+              <p className="text-sm mt-1">
+                This application requires a Supabase storage bucket named 'posters' with public access.
+                An administrator needs to create this in the Supabase dashboard.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh} 
+                disabled={isLoading}
+                className="mt-2 w-fit"
+              >
+                {isLoading ? 'Checking again...' : 'Check Again'}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {/* General error message */}
+        {error && !error.includes('Storage configuration') && (
           <Alert variant="destructive" className="mb-6">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
