@@ -3,6 +3,9 @@ import { Poster } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { ensureStorageBucketExists } from '@/utils/imageUploader';
 
+// Constants
+const BUCKET_NAME = 'proterz';
+
 export class PosterService {
   private static bucketInitialized = false;
   
@@ -18,7 +21,7 @@ export class PosterService {
       if (success) {
         console.log('PosterService initialized, bucket is ready');
       } else {
-        console.warn('PosterService initialized but bucket may not be available');
+        console.warn(`PosterService initialized but ${BUCKET_NAME} bucket may not be available`);
       }
     } catch (err) {
       console.error('Failed to initialize PosterService storage:', err);
@@ -161,7 +164,7 @@ export class PosterService {
           
           if (fileName) {
             const { error: storageError } = await supabase.storage
-              .from('posters')
+              .from(BUCKET_NAME)
               .remove([fileName]);
               
             if (storageError) {

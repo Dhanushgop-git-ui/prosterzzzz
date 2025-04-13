@@ -16,6 +16,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ensureStorageBucketExists } from '@/utils/imageUploader';
 
+// Constants
+const BUCKET_NAME = 'proterz';
+
 const AdminPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -174,7 +177,7 @@ const AdminPage = () => {
             <AlertDescription className="flex flex-col gap-2">
               <p>{storageError}</p>
               <p className="text-sm mt-1">
-                This application requires a Supabase storage bucket named 'posters' with public access.
+                This application requires a Supabase storage bucket named '{BUCKET_NAME}' with public access.
                 An administrator needs to create this in the Supabase dashboard.
               </p>
               <Button 

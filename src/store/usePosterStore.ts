@@ -3,6 +3,9 @@ import { create } from 'zustand';
 import { Poster, PosterCategory } from '@/types';
 import { PosterService } from '@/services/posterService';
 
+// Constants
+const BUCKET_NAME = 'proterz';
+
 interface PosterStore {
   posters: Poster[];
   categories: PosterCategory[];
@@ -65,7 +68,7 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       const errorStr = error instanceof Error ? error.message : String(error);
       
       if (errorStr.includes('Bucket not found') || errorStr.includes('violates row-level security policy')) {
-        errorMsg = 'Storage configuration issue detected. Please contact your administrator to set up the Supabase storage bucket.';
+        errorMsg = `Storage configuration issue detected. Please contact your administrator to set up the Supabase storage bucket '${BUCKET_NAME}'.`;
       } else if (newRetryCount > 3) {
         errorMsg = 'Multiple attempts to load posters failed. Please check your network connection or try again later.';
       }
@@ -109,7 +112,7 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       // Provide more specific error messages for common issues
       if (error instanceof Error) {
         if (error.message.includes('Bucket not found') || error.message.includes('violates row-level security policy')) {
-          errorMessage = 'Storage configuration issue. Please contact your administrator to set up the Supabase storage bucket.';
+          errorMessage = `Storage configuration issue. Please contact your administrator to set up the Supabase storage bucket '${BUCKET_NAME}'.`;
         } else {
           errorMessage = error.message;
         }

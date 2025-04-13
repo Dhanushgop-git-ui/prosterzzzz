@@ -1,6 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Constants
+const BUCKET_NAME = 'proterz';
+
 // Try to upload image even if bucket creation fails
 export const uploadImageToSupabase = async (file: File): Promise<string> => {
   try {
@@ -15,11 +18,11 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
     const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
     
-    console.log('Uploading file to Supabase:', fileName);
+    console.log(`Uploading file to Supabase ${BUCKET_NAME} bucket:`, fileName);
     
     // Upload to Supabase Storage
     const { error: uploadError, data } = await supabase.storage
-      .from('posters')
+      .from(BUCKET_NAME)
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: true // Allow overwrites if needed
@@ -28,7 +31,7 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
     if (uploadError) {
       // Special case: If the bucket doesn't exist but we try to upload anyway
       if (uploadError.message.includes('Bucket not found')) {
-        throw new Error('Storage bucket not found. Please contact your administrator to set up the Supabase storage bucket.');
+        throw new Error(`Storage bucket "${BUCKET_NAME}" not found. Please contact your administrator to set up the Supabase storage bucket.`);
       }
       
       console.error('Error uploading to Supabase:', uploadError);
@@ -37,7 +40,7 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
     
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('posters')
+      .from(BUCKET_NAME)
       .getPublicUrl(filePath);
       
     console.log('Image uploaded successfully:', publicUrl);
@@ -51,10 +54,10 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
 // Modified to not throw errors in case of RLS policy issues
 export const ensureStorageBucketExists = async (): Promise<boolean> => {
   try {
-    console.log('Checking if posters bucket exists...');
+    console.log(`Checking if ${BUCKET_NAME} bucket exists...`);
     
     // Try to get bucket information first
-    const { data: getBucketData, error: getBucketError } = await supabase.storage.getBucket('posters');
+    const { data: getBucketData, error: getBucketError } = await supabase.storage.getBucket(BUCKET_NAME);
     
     // If bucket exists, we're good to go
     if (!getBucketError && getBucketData) {
@@ -62,7 +65,7 @@ export const ensureStorageBucketExists = async (): Promise<boolean> => {
       
       // Update bucket to ensure it's public
       try {
-        await supabase.storage.updateBucket('posters', {
+        await supabase.storage.updateBucket(BUCKET_NAME, {
           public: true,
           fileSizeLimit: 10485760 // 10MB
         });
@@ -76,7 +79,7 @@ export const ensureStorageBucketExists = async (): Promise<boolean> => {
     
     // Try to create the bucket
     try {
-      const { data: createData, error: createError } = await supabase.storage.createBucket('posters', {
+      const { data: createData, error: createError } = await supabase.storage.createBucket(BUCKET_NAME, {
         public: true,
         fileSizeLimit: 10485760 // 10MB
       });
@@ -98,7 +101,7 @@ export const ensureStorageBucketExists = async (): Promise<boolean> => {
         return false;
       }
       
-      console.log('Created posters bucket successfully');
+      console.log(`Created ${BUCKET_NAME} bucket successfully`);
       return true;
     } catch (err) {
       console.error('Exception during bucket creation:', err);
@@ -114,7 +117,7 @@ export const ensureStorageBucketExists = async (): Promise<boolean> => {
 export const checkFileExists = async (filePath: string): Promise<boolean> => {
   try {
     const { data, error } = await supabase.storage
-      .from('posters')
+      .from(BUCKET_NAME)
       .list('', {
         search: filePath
       });

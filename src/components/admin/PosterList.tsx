@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+// Constants
+const BUCKET_NAME = 'proterz';
+
 const PosterList = () => {
   const { toast } = useToast();
   const { posters, deletePoster, isLoading, fetchPosters, error, retryCount } = usePosterStore();
@@ -106,8 +109,8 @@ const PosterList = () => {
             {retryCount > 2 && (
               <p className="text-xs mt-1">
                 {error.includes('Storage configuration') 
-                  ? 'This is likely due to Supabase storage permissions. An administrator needs to create the posters bucket with public access.'
-                  : 'This could be due to Supabase storage configuration. The app will continue to attempt to create the required storage bucket.'}
+                  ? `This is likely due to Supabase storage permissions. An administrator needs to create the ${BUCKET_NAME} bucket with public access.`
+                  : `This could be due to Supabase storage configuration. The app will continue to attempt to create the required storage bucket.`}
               </p>
             )}
           </AlertDescription>
