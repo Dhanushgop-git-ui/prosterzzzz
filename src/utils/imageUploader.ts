@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Constants
@@ -7,9 +6,9 @@ const BUCKET_NAME = 'proterz';
 // Try to upload image even if bucket creation fails
 export const uploadImageToSupabase = async (file: File): Promise<string> => {
   try {
-    // Try to ensure the bucket exists, but don't throw if it fails
+    // Check bucket existence, but don't attempt to modify it
     try {
-      await ensureStorageBucketExists();
+      await checkStorageBucketExists();
     } catch (err) {
       console.warn('Warning: Could not verify storage bucket, but will attempt upload anyway:', err);
     }
@@ -29,9 +28,14 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
       });
       
     if (uploadError) {
+      // Handle RLS policy errors more gracefully
+      if (uploadError.message.includes('violates row-level security policy')) {
+        throw new Error(`Permission denied. Your current user doesn't have upload access to the ${BUCKET_NAME} bucket per RLS policies.`);
+      }
+      
       // Special case: If the bucket doesn't exist but we try to upload anyway
       if (uploadError.message.includes('Bucket not found')) {
-        throw new Error(`Storage bucket "${BUCKET_NAME}" not found. Please check Supabase to ensure the '${BUCKET_NAME}' bucket exists and is public.`);
+        throw new Error(`Storage bucket "${BUCKET_NAME}" not found. Please check Supabase to ensure the '${BUCKET_NAME}' bucket exists.`);
       }
       
       console.error('Error uploading to Supabase:', uploadError);
@@ -51,8 +55,8 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
   }
 };
 
-// Modified to first check if bucket exists before trying to create it
-export const ensureStorageBucketExists = async (): Promise<boolean> => {
+// Modified to only check if bucket exists without trying to create/modify it
+export const checkStorageBucketExists = async (): Promise<boolean> => {
   try {
     console.log(`Checking if ${BUCKET_NAME} bucket exists...`);
     
@@ -68,59 +72,21 @@ export const ensureStorageBucketExists = async (): Promise<boolean> => {
     const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
     
     if (bucketExists) {
-      console.log(`Bucket ${BUCKET_NAME} exists`);
-      
-      // Attempt to update the bucket to ensure it's public
-      try {
-        await supabase.storage.updateBucket(BUCKET_NAME, {
-          public: true,
-          fileSizeLimit: 10485760 // 10MB
-        });
-        console.log('Bucket settings updated to public');
-        return true;
-      } catch (updateErr) {
-        console.warn('Could not update bucket settings, but proceeding anyway:', updateErr);
-        return true; // Return true since bucket exists even if we couldn't update it
-      }
-    }
-    
-    // If we get here, bucket doesn't exist, so try to create it
-    console.log(`Bucket ${BUCKET_NAME} does not exist, attempting to create...`);
-    
-    try {
-      const { data: createData, error: createError } = await supabase.storage.createBucket(BUCKET_NAME, {
-        public: true,
-        fileSizeLimit: 10485760 // 10MB
-      });
-      
-      if (createError) {
-        // If it's an RLS policy error, we log it but don't throw
-        if (createError.message.includes('violates row-level security policy')) {
-          console.warn(`Could not create bucket due to RLS policy. An administrator needs to create the '${BUCKET_NAME}' bucket manually:`, createError);
-          return false;
-        }
-        
-        // If "already exists", that's fine
-        if (createError.message.includes('already exists')) {
-          console.log('Bucket already exists');
-          return true;
-        }
-        
-        console.error('Error creating bucket:', createError);
-        return false;
-      }
-      
-      console.log(`Created ${BUCKET_NAME} bucket successfully`);
+      console.log(`Bucket ${BUCKET_NAME} exists - using existing configuration`);
       return true;
-    } catch (err) {
-      console.error('Exception during bucket creation:', err);
-      return false;
     }
+    
+    // If bucket doesn't exist, log a warning but don't try to create it
+    console.warn(`Bucket ${BUCKET_NAME} does not exist. Please create it manually in the Supabase dashboard.`);
+    return false;
   } catch (err) {
-    console.error('Error in ensureStorageBucketExists:', err);
+    console.error('Error in checkStorageBucketExists:', err);
     return false;
   }
 };
+
+// Renamed from ensureStorageBucketExists to be more clear about its purpose
+export const ensureStorageBucketExists = checkStorageBucketExists;
 
 // Helper function to check if a file exists in the bucket
 export const checkFileExists = async (filePath: string): Promise<boolean> => {

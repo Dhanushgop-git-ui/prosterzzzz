@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, List, Loader, Upload, AlertTriangle, RefreshCw, ShieldAlert } from 'lucide-react';
@@ -14,7 +13,7 @@ import { User } from '@/types';
 import { usePosterStore } from '@/store/usePosterStore';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ensureStorageBucketExists } from '@/utils/imageUploader';
+import { checkStorageBucketExists } from '@/utils/imageUploader';
 
 // Constants
 const BUCKET_NAME = 'proterz';
@@ -29,7 +28,7 @@ const AdminPage = () => {
   const [storageBucketChecked, setStorageBucketChecked] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
   
-  // Check for bucket existence on component mount
+  // Check for bucket existence on component mount - no longer tries to create
   useEffect(() => {
     async function checkBucket() {
       try {
@@ -46,17 +45,16 @@ const AdminPage = () => {
         const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
         
         if (bucketExists) {
-          console.log(`Bucket ${BUCKET_NAME} exists`);
+          console.log(`Bucket ${BUCKET_NAME} exists - using existing configuration`);
           setStorageBucketChecked(true);
           setStorageError(null);
           return;
         }
         
-        // If bucket doesn't exist, try to create it
-        console.log(`Bucket ${BUCKET_NAME} does not exist, checking and attempting to create...`);
-        setStorageBucketChecked(false);
-        await ensureStorageBucketExists();
+        // If bucket doesn't exist, show error
+        console.warn(`Bucket ${BUCKET_NAME} does not exist`);
         setStorageBucketChecked(true);
+        setStorageError(`Storage bucket '${BUCKET_NAME}' does not exist. Please create it manually in the Supabase dashboard.`);
       } catch (err) {
         console.error('Error checking bucket existence:', err);
         setStorageError(`Error verifying storage: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -66,27 +64,26 @@ const AdminPage = () => {
     checkBucket();
   }, []);
   
-  // Check and create storage bucket if needed
+  // Check storage bucket - no longer tries to create/update
   useEffect(() => {
     const checkStorageBucket = async () => {
       if (storageBucketChecked) return;
       
       try {
         console.log('AdminPage: Checking if storage bucket exists');
-        const success = await ensureStorageBucketExists();
+        const exists = await checkStorageBucketExists();
         setStorageBucketChecked(true);
         
-        if (success) {
+        if (exists) {
           console.log('AdminPage: Storage bucket confirmed');
           setStorageError(null);
         } else {
-          console.warn('AdminPage: Storage bucket could not be created/updated');
-          setStorageError(`Storage bucket '${BUCKET_NAME}' could not be created due to permissions. Administrator assistance is required.`);
+          console.warn('AdminPage: Storage bucket not found');
+          setStorageError(`Storage bucket '${BUCKET_NAME}' not found. Please create it manually in the Supabase dashboard.`);
         }
       } catch (err) {
-        console.error('AdminPage: Error checking/creating bucket:', err);
-        setStorageError('Error initializing storage. Please try again later or contact an administrator.');
-        // We'll let the poster fetch handle display of errors
+        console.error('AdminPage: Error checking bucket:', err);
+        setStorageError('Error verifying storage. Please try again later or contact an administrator.');
       }
     };
     
@@ -147,7 +144,7 @@ const AdminPage = () => {
     setStorageError(null);
     setStorageBucketChecked(false);
     
-    // Try to verify the bucket exists using listBuckets first
+    // Try to verify the bucket exists using listBuckets
     try {
       const { data: buckets, error: listError } = await supabase.storage.listBuckets();
       
@@ -161,25 +158,17 @@ const AdminPage = () => {
       const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
       
       if (bucketExists) {
-        console.log(`Bucket ${BUCKET_NAME} exists`);
+        console.log(`Bucket ${BUCKET_NAME} exists - using existing configuration`);
         setStorageBucketChecked(true);
         setStorageError(null);
       } else {
-        // Try to check storage bucket again if it doesn't exist
-        const success = await ensureStorageBucketExists();
+        console.warn(`Bucket ${BUCKET_NAME} not found`);
         setStorageBucketChecked(true);
-        
-        if (success) {
-          console.log('AdminPage: Storage bucket confirmed on refresh');
-          setStorageError(null);
-        } else {
-          console.warn('AdminPage: Storage bucket could not be created/updated on refresh');
-          setStorageError(`Storage bucket '${BUCKET_NAME}' could not be created. Administrator assistance is required.`);
-        }
+        setStorageError(`Storage bucket '${BUCKET_NAME}' not found. Please create it manually in the Supabase dashboard.`);
       }
     } catch (err) {
       console.error('Error during refresh bucket check:', err);
-      setStorageError('Error initializing storage. Please try again later.');
+      setStorageError('Error verifying storage. Please try again later.');
     }
     
     // Then fetch posters, with forced retry
@@ -224,16 +213,17 @@ const AdminPage = () => {
           </Button>
         </div>
         
-        {/* Specific storage error message */}
+        {/* Specific storage error message - updated for custom policies */}
         {storageError && (
           <Alert variant="destructive" className="mb-6">
             <ShieldAlert className="h-4 w-4" />
-            <AlertTitle>Storage Configuration Issue</AlertTitle>
+            <AlertTitle>Storage Configuration Notice</AlertTitle>
             <AlertDescription className="flex flex-col gap-2">
               <p>{storageError}</p>
               <p className="text-sm mt-1">
-                This application requires a Supabase storage bucket named '{BUCKET_NAME}' with public access.
-                An administrator needs to create this in the Supabase dashboard.
+                Note: If you've manually configured the '{BUCKET_NAME}' bucket with custom RLS policies, 
+                you may see this message even though uploads will work for authorized users.
+                The application needs the '{BUCKET_NAME}' bucket to exist but will respect your custom permissions.
               </p>
               <Button 
                 variant="outline" 

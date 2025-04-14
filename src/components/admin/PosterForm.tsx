@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from 'lucide-react';
 import { PosterCategory } from '@/types';
-import { uploadImageToSupabase, ensureStorageBucketExists } from '@/utils/imageUploader';
+import { uploadImageToSupabase, checkStorageBucketExists } from '@/utils/imageUploader';
 import PosterImageUpload from './form/PosterImageUpload';
 import CategorySelector from './form/CategorySelector';
 import PricingInputs from './form/PricingInputs';
@@ -29,22 +29,22 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   
-  // Create posters bucket if it doesn't exist already
+  // Only verify bucket exists instead of creating
   useEffect(() => {
-    const initStorage = async () => {
+    const checkStorage = async () => {
       try {
-        await ensureStorageBucketExists();
+        await checkStorageBucketExists();
       } catch (error) {
-        console.error('Failed to initialize storage:', error);
+        console.error('Failed to verify storage:', error);
         toast({
-          title: 'Storage Error',
-          description: 'Failed to initialize storage. Please try again.',
+          title: 'Storage Notice',
+          description: 'Failed to verify storage bucket. Uploads may still work if you have proper permissions.',
           variant: 'destructive',
         });
       }
     };
     
-    initStorage();
+    checkStorage();
   }, [toast]);
   
   // Reset the form when error changes
@@ -115,37 +115,59 @@ const PosterForm = ({ onComplete }: PosterFormProps) => {
       // Upload the image and get the URL
       setUploadProgress(30);
       console.log('Uploading image to Supabase...');
-      const imageUrl = await uploadImageToSupabase(image);
-      setUploadProgress(70);
-      console.log('Image uploaded successfully, URL:', imageUrl);
       
-      console.log('Adding poster to database...');
-      await addPoster({
-        title,
-        image: imageUrl,
-        category,
-        priceA3,
-        priceA4,
-      });
-      
-      setUploadProgress(100);
-      
-      toast({
-        title: 'Poster Added',
-        description: 'Your poster has been added successfully.',
-      });
-      
-      // Reset the form
-      setTitle('');
-      setCategory('');
-      setPriceA3(599);
-      setPriceA4(399);
-      setImage(null);
-      setPreview('');
-      setUploadProgress(0);
-      
-      if (onComplete) {
-        onComplete();
+      try {
+        const imageUrl = await uploadImageToSupabase(image);
+        setUploadProgress(70);
+        console.log('Image uploaded successfully, URL:', imageUrl);
+        
+        console.log('Adding poster to database...');
+        await addPoster({
+          title,
+          image: imageUrl,
+          category,
+          priceA3,
+          priceA4,
+        });
+        
+        setUploadProgress(100);
+        
+        toast({
+          title: 'Poster Added',
+          description: 'Your poster has been added successfully.',
+        });
+        
+        // Reset the form
+        setTitle('');
+        setCategory('');
+        setPriceA3(599);
+        setPriceA4(399);
+        setImage(null);
+        setPreview('');
+        setUploadProgress(0);
+        
+        if (onComplete) {
+          onComplete();
+        }
+      } catch (uploadError) {
+        console.error('Upload failed:', uploadError);
+        
+        // Improve error message for RLS violations
+        if (uploadError instanceof Error && uploadError.message.includes('violates row-level security policy')) {
+          toast({
+            title: 'Permission Denied',
+            description: 'Your current user does not have permission to upload files according to the bucket\'s RLS policies.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Upload Failed',
+            description: uploadError instanceof Error ? uploadError.message : 'Failed to upload image. Please try again.',
+            variant: 'destructive',
+          });
+        }
+        
+        setUploadProgress(0);
       }
     } catch (error) {
       console.error('Error in form submission:', error);

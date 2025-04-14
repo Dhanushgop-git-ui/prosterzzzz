@@ -1,6 +1,6 @@
 import { Poster } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { ensureStorageBucketExists } from '@/utils/imageUploader';
+import { checkStorageBucketExists } from '@/utils/imageUploader';
 
 // Constants
 const BUCKET_NAME = 'proterz';
@@ -28,21 +28,15 @@ export class PosterService {
       const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
       
       if (bucketExists) {
-        console.log(`Bucket ${BUCKET_NAME} exists`);
+        console.log(`Bucket ${BUCKET_NAME} exists - using existing configuration`);
         this.bucketInitialized = true;
         this.bucketCheckInProgress = false;
         return;
       }
       
-      // Only mark as initialized if successful
-      const success = await ensureStorageBucketExists();
-      this.bucketInitialized = success;
-      
-      if (success) {
-        console.log('PosterService initialized, bucket is ready');
-      } else {
-        console.warn(`PosterService initialized but ${BUCKET_NAME} bucket may not be available`);
-      }
+      // If bucket doesn't exist, just log a warning
+      console.warn(`PosterService initialized but ${BUCKET_NAME} bucket does not exist. Please create it manually in the Supabase dashboard.`);
+      this.bucketInitialized = false;
     } catch (err) {
       console.error('Failed to initialize PosterService storage:', err);
       // Even if this fails, we'll let some operations continue
@@ -56,7 +50,7 @@ export class PosterService {
     try {
       console.log('Fetching posters from database...');
       
-      // Try to initialize storage only as a best effort
+      // Try to check storage only as a best effort
       if (!this.bucketInitialized) {
         try {
           await this.init();
@@ -102,7 +96,7 @@ export class PosterService {
     try {
       console.log('Adding poster to database:', poster);
       
-      // Try to initialize, but don't block if it fails
+      // Just check if the bucket exists without trying to modify it
       if (!this.bucketInitialized) {
         try {
           await this.init();

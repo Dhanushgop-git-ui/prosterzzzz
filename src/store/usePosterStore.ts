@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Poster, PosterCategory } from '@/types';
 import { PosterService } from '@/services/posterService';
@@ -67,8 +66,10 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       // Check for specific error messages
       const errorStr = error instanceof Error ? error.message : String(error);
       
-      if (errorStr.includes('Bucket not found') || errorStr.includes('violates row-level security policy')) {
-        errorMsg = `Storage configuration issue detected. Please check Supabase to ensure the '${BUCKET_NAME}' bucket exists and is public.`;
+      if (errorStr.includes('Bucket not found')) {
+        errorMsg = `Storage bucket '${BUCKET_NAME}' not found. Please create it manually in the Supabase dashboard.`;
+      } else if (errorStr.includes('violates row-level security policy')) {
+        errorMsg = `Access denied due to RLS policies. Your user may not have permission to access the required resources.`;
       } else if (newRetryCount > 3) {
         errorMsg = 'Multiple attempts to load posters failed. Please check your network connection or try again later.';
       }
@@ -111,8 +112,10 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       
       // Provide more specific error messages for common issues
       if (error instanceof Error) {
-        if (error.message.includes('Bucket not found') || error.message.includes('violates row-level security policy')) {
-          errorMessage = `Storage configuration issue. Please contact your administrator to set up the Supabase storage bucket '${BUCKET_NAME}'.`;
+        if (error.message.includes('Bucket not found')) {
+          errorMessage = `Storage bucket '${BUCKET_NAME}' not found. Please check Supabase dashboard.`;
+        } else if (error.message.includes('violates row-level security policy')) {
+          errorMessage = `Permission denied. Your current user doesn't have the required permissions according to RLS policies.`;
         } else {
           errorMessage = error.message;
         }
