@@ -68,7 +68,7 @@ export const usePosterStore = create<PosterStore>((set, get) => ({
       const errorStr = error instanceof Error ? error.message : String(error);
       
       if (errorStr.includes('Bucket not found') || errorStr.includes('violates row-level security policy')) {
-        errorMsg = `Storage configuration issue detected. Please contact your administrator to set up the Supabase storage bucket '${BUCKET_NAME}'.`;
+        errorMsg = `Storage configuration issue detected. Please check Supabase to ensure the '${BUCKET_NAME}' bucket exists and is public.`;
       } else if (newRetryCount > 3) {
         errorMsg = 'Multiple attempts to load posters failed. Please check your network connection or try again later.';
       }

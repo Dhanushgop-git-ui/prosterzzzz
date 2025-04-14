@@ -1,4 +1,3 @@
-
 import { Poster } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { ensureStorageBucketExists } from '@/utils/imageUploader';
@@ -8,12 +7,33 @@ const BUCKET_NAME = 'proterz';
 
 export class PosterService {
   private static bucketInitialized = false;
+  private static bucketCheckInProgress = false;
   
   // Non-blocking bucket initialization that won't fail the app
   static async init() {
-    if (this.bucketInitialized) return;
+    if (this.bucketInitialized || this.bucketCheckInProgress) return;
     
+    this.bucketCheckInProgress = true;
     try {
+      // First check if the bucket exists using listBuckets
+      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+      
+      if (listError) {
+        console.warn('Failed to list storage buckets:', listError);
+        this.bucketCheckInProgress = false;
+        return;
+      }
+      
+      // Check if our bucket exists in the list
+      const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
+      
+      if (bucketExists) {
+        console.log(`Bucket ${BUCKET_NAME} exists`);
+        this.bucketInitialized = true;
+        this.bucketCheckInProgress = false;
+        return;
+      }
+      
       // Only mark as initialized if successful
       const success = await ensureStorageBucketExists();
       this.bucketInitialized = success;
@@ -26,6 +46,8 @@ export class PosterService {
     } catch (err) {
       console.error('Failed to initialize PosterService storage:', err);
       // Even if this fails, we'll let some operations continue
+    } finally {
+      this.bucketCheckInProgress = false;
     }
   }
   

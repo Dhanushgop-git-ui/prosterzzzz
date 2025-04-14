@@ -29,6 +29,43 @@ const AdminPage = () => {
   const [storageBucketChecked, setStorageBucketChecked] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
   
+  // Check for bucket existence on component mount
+  useEffect(() => {
+    async function checkBucket() {
+      try {
+        // Just attempt to list buckets first to check if bucket exists
+        const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+        
+        if (listError) {
+          console.error('Error listing buckets:', listError);
+          setStorageError(`Error accessing Supabase storage: ${listError.message}`);
+          return;
+        }
+        
+        // Check if our bucket exists in the list
+        const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
+        
+        if (bucketExists) {
+          console.log(`Bucket ${BUCKET_NAME} exists`);
+          setStorageBucketChecked(true);
+          setStorageError(null);
+          return;
+        }
+        
+        // If bucket doesn't exist, try to create it
+        console.log(`Bucket ${BUCKET_NAME} does not exist, checking and attempting to create...`);
+        setStorageBucketChecked(false);
+        await ensureStorageBucketExists();
+        setStorageBucketChecked(true);
+      } catch (err) {
+        console.error('Error checking bucket existence:', err);
+        setStorageError(`Error verifying storage: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
+    }
+    
+    checkBucket();
+  }, []);
+  
   // Check and create storage bucket if needed
   useEffect(() => {
     const checkStorageBucket = async () => {
@@ -44,7 +81,7 @@ const AdminPage = () => {
           setStorageError(null);
         } else {
           console.warn('AdminPage: Storage bucket could not be created/updated');
-          setStorageError('Storage bucket could not be created due to permissions. Administrator assistance is required.');
+          setStorageError(`Storage bucket '${BUCKET_NAME}' could not be created due to permissions. Administrator assistance is required.`);
         }
       } catch (err) {
         console.error('AdminPage: Error checking/creating bucket:', err);
@@ -110,17 +147,35 @@ const AdminPage = () => {
     setStorageError(null);
     setStorageBucketChecked(false);
     
-    // Try to check storage bucket again
+    // Try to verify the bucket exists using listBuckets first
     try {
-      const success = await ensureStorageBucketExists();
-      setStorageBucketChecked(true);
+      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
       
-      if (success) {
-        console.log('AdminPage: Storage bucket confirmed on refresh');
+      if (listError) {
+        console.error('Error listing buckets during refresh:', listError);
+        setStorageError(`Error accessing Supabase storage: ${listError.message}`);
+        return;
+      }
+      
+      // Check if our bucket exists in the list
+      const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
+      
+      if (bucketExists) {
+        console.log(`Bucket ${BUCKET_NAME} exists`);
+        setStorageBucketChecked(true);
         setStorageError(null);
       } else {
-        console.warn('AdminPage: Storage bucket could not be created/updated on refresh');
-        setStorageError('Storage bucket could not be created. Administrator assistance is required.');
+        // Try to check storage bucket again if it doesn't exist
+        const success = await ensureStorageBucketExists();
+        setStorageBucketChecked(true);
+        
+        if (success) {
+          console.log('AdminPage: Storage bucket confirmed on refresh');
+          setStorageError(null);
+        } else {
+          console.warn('AdminPage: Storage bucket could not be created/updated on refresh');
+          setStorageError(`Storage bucket '${BUCKET_NAME}' could not be created. Administrator assistance is required.`);
+        }
       }
     } catch (err) {
       console.error('Error during refresh bucket check:', err);

@@ -31,7 +31,7 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
     if (uploadError) {
       // Special case: If the bucket doesn't exist but we try to upload anyway
       if (uploadError.message.includes('Bucket not found')) {
-        throw new Error(`Storage bucket "${BUCKET_NAME}" not found. Please contact your administrator to set up the Supabase storage bucket.`);
+        throw new Error(`Storage bucket "${BUCKET_NAME}" not found. Please check Supabase to ensure the '${BUCKET_NAME}' bucket exists and is public.`);
       }
       
       console.error('Error uploading to Supabase:', uploadError);
@@ -51,33 +51,42 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
   }
 };
 
-// Modified to not throw errors in case of RLS policy issues
+// Modified to first check if bucket exists before trying to create it
 export const ensureStorageBucketExists = async (): Promise<boolean> => {
   try {
     console.log(`Checking if ${BUCKET_NAME} bucket exists...`);
     
     // Try to get bucket information first
-    const { data: getBucketData, error: getBucketError } = await supabase.storage.getBucket(BUCKET_NAME);
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
     
-    // If bucket exists, we're good to go
-    if (!getBucketError && getBucketData) {
-      console.log('Bucket exists:', getBucketData);
+    if (listError) {
+      console.error('Error listing buckets:', listError);
+      return false;
+    }
+    
+    // Check if our bucket exists in the list
+    const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
+    
+    if (bucketExists) {
+      console.log(`Bucket ${BUCKET_NAME} exists`);
       
-      // Update bucket to ensure it's public
+      // Attempt to update the bucket to ensure it's public
       try {
         await supabase.storage.updateBucket(BUCKET_NAME, {
           public: true,
           fileSizeLimit: 10485760 // 10MB
         });
-        console.log('Bucket settings updated successfully');
+        console.log('Bucket settings updated to public');
+        return true;
       } catch (updateErr) {
-        console.warn('Could not update bucket settings, but proceeding:', updateErr);
+        console.warn('Could not update bucket settings, but proceeding anyway:', updateErr);
+        return true; // Return true since bucket exists even if we couldn't update it
       }
-      
-      return true;
     }
     
-    // Try to create the bucket
+    // If we get here, bucket doesn't exist, so try to create it
+    console.log(`Bucket ${BUCKET_NAME} does not exist, attempting to create...`);
+    
     try {
       const { data: createData, error: createError } = await supabase.storage.createBucket(BUCKET_NAME, {
         public: true,
@@ -87,7 +96,7 @@ export const ensureStorageBucketExists = async (): Promise<boolean> => {
       if (createError) {
         // If it's an RLS policy error, we log it but don't throw
         if (createError.message.includes('violates row-level security policy')) {
-          console.warn('Could not create bucket due to RLS policy. User may not have permission:', createError);
+          console.warn(`Could not create bucket due to RLS policy. An administrator needs to create the '${BUCKET_NAME}' bucket manually:`, createError);
           return false;
         }
         
