@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, List, Loader, Upload, AlertTriangle, RefreshCw, ShieldAlert } from 'lucide-react';
@@ -5,6 +6,7 @@ import Layout from '@/components/layout/Layout';
 import PosterForm from '@/components/admin/PosterForm';
 import PosterList from '@/components/admin/PosterList';
 import BulkPosterUpload from '@/components/admin/BulkPosterUpload';
+import SupabaseDiagnostic from '@/components/admin/SupabaseDiagnostic';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -278,6 +280,10 @@ const AdminPage = () => {
                 <Upload size={16} className="mr-2" />
                 Bulk Upload
               </TabsTrigger>
+              <TabsTrigger value="diagnostics" className="flex items-center">
+                <AlertTriangle size={16} className="mr-2" />
+                Diagnostics
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="list">
@@ -298,6 +304,12 @@ const AdminPage = () => {
             <TabsContent value="bulk">
               <div className="max-w-xl mx-auto">
                 <BulkPosterUpload />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="diagnostics">
+              <div className="max-w-xl mx-auto">
+                <SupabaseDiagnostic />
               </div>
             </TabsContent>
           </Tabs>

@@ -1,3 +1,4 @@
+
 import { Poster } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { checkStorageBucketExists } from '@/utils/imageUploader';
@@ -50,6 +51,11 @@ export class PosterService {
     try {
       console.log('Fetching posters from database...');
       
+      // Check authentication status
+      const { data: authData, error: authError } = await supabase.auth.getSession();
+      console.log('Auth session check:', authError ? 'Error: ' + authError.message : 'Session found', 
+        authData?.session ? `User ID: ${authData.session.user.id}` : 'No active session');
+      
       // Try to check storage only as a best effort
       if (!this.bucketInitialized) {
         try {
@@ -59,14 +65,25 @@ export class PosterService {
         }
       }
       
-      const { data, error } = await supabase
+      // Enhanced logging for the database request
+      console.log('Making database request to fetch posters...');
+      
+      const { data, error, status, statusText } = await supabase
         .from('posters')
         .select('*')
         .order('created_at', { ascending: false });
       
+      // Log detailed response information
+      console.log('Database response:', {
+        status,
+        statusText,
+        error: error ? { message: error.message, code: error.code, details: error.details } : null,
+        dataCount: data ? data.length : 0
+      });
+      
       if (error) {
         console.error('Error fetching posters:', error);
-        throw new Error(`Database error: ${error.message}`);
+        throw new Error(`Database error: ${error.message}${error.details ? ' Details: ' + error.details : ''}`);
       }
       
       if (!data || data.length === 0) {
@@ -74,7 +91,13 @@ export class PosterService {
         return [];
       }
       
-      console.log('Posters fetched:', data.length);
+      console.log('Posters fetched successfully:', data.length);
+      console.log('First poster sample (redacted):', data[0] ? {
+        id: data[0].id,
+        title: data[0].title,
+        category: data[0].category,
+        has_image: !!data[0].image
+      } : 'No poster data');
       
       // Map the database fields to our Poster type
       return data.map(poster => ({

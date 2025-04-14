@@ -1,12 +1,13 @@
 
 import React, { useEffect } from 'react';
-import { Pencil, Trash2, Loader, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Pencil, Trash2, Loader, RefreshCw, AlertTriangle, ShieldAlert, Database } from 'lucide-react';
 import { usePosterStore } from '@/store/usePosterStore';
 import { Poster } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 
 // Constants
 const BUCKET_NAME = 'proterz';
@@ -18,6 +19,16 @@ const PosterList = () => {
   useEffect(() => {
     // Load posters when component mounts
     fetchPosters();
+    
+    // Check and log auth status for debugging
+    const checkAuth = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      console.log('Auth check from PosterList:', 
+        error ? 'Error: ' + error.message : 'Success', 
+        data?.session ? `User ID: ${data.session.user.id}` : 'No active session');
+    };
+    
+    checkAuth();
   }, [fetchPosters]);
   
   const handleDelete = async (id: string, title: string) => {
@@ -89,14 +100,26 @@ const PosterList = () => {
       
       {error && (
         <Alert variant="destructive" className="mb-4">
-          {error.includes('Storage configuration') || error.includes('Bucket not found') ? (
+          {error.includes('row-level security') ? (
+            <Database className="h-4 w-4" />
+          ) : error.includes('Storage configuration') || error.includes('Bucket not found') ? (
             <ShieldAlert className="h-4 w-4" />
           ) : (
             <AlertTriangle className="h-4 w-4" />
           )}
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>
+            {error.includes('row-level security') 
+              ? 'Row-Level Security Error' 
+              : 'Error'}
+          </AlertTitle>
           <AlertDescription className="flex flex-col gap-2">
             <p>{error}</p>
+            {error.includes('row-level security') && (
+              <p className="text-sm mt-1">
+                This is likely due to Row-Level Security (RLS) policies that restrict access to the posters table.
+                Please ensure your account has the correct permissions or update the RLS policies in Supabase.
+              </p>
+            )}
             <Button 
               variant="outline" 
               size="sm" 
@@ -106,7 +129,7 @@ const PosterList = () => {
             >
               {isLoading ? 'Trying again...' : 'Try Again'}
             </Button>
-            {retryCount > 2 && (
+            {retryCount > 2 && !error.includes('row-level security') && (
               <p className="text-xs mt-1">
                 {error.includes('Storage configuration') 
                   ? `This is likely due to Supabase storage permissions. An administrator needs to create the ${BUCKET_NAME} bucket with public access.`
