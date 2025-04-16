@@ -12,6 +12,15 @@ interface PosterCardProps {
 
 const PosterCard = ({ poster }: PosterCardProps) => {
   const [imageError, setImageError] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // Function to retry loading image
+  const retryLoadImage = () => {
+    if (imageError) {
+      setImageError(false);
+      setIsLoading(true);
+    }
+  };
 
   return (
     <motion.div
@@ -31,21 +40,42 @@ const PosterCard = ({ poster }: PosterCardProps) => {
             className="poster-image bg-gradient-to-br from-prosterz-50 to-prosterz-100 aspect-[3/4]"
             whileHover={{ scale: 1.08 }}
             transition={{ duration: 0.5 }}
+            onClick={imageError ? retryLoadImage : undefined}
           >
             {imageError ? (
-              <div className="w-full h-full flex items-center justify-center bg-prosterz-50">
-                <ImageOff className="h-12 w-12 text-prosterz-300" />
+              <div className="w-full h-full flex flex-col items-center justify-center bg-prosterz-50 p-2">
+                <ImageOff className="h-12 w-12 text-prosterz-300 mb-2" />
+                <p className="text-xs text-center text-prosterz-500">Image failed to load</p>
+                <button 
+                  className="text-xs text-prosterz-600 underline mt-1"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    retryLoadImage();
+                  }}
+                >
+                  Retry
+                </button>
               </div>
             ) : (
-              <img
-                src={poster.image}
-                alt={poster.title}
-                className="w-full h-full object-cover transition-transform duration-500"
-                onError={(e) => {
-                  console.error(`Failed to load image: ${poster.image}`);
-                  setImageError(true);
-                }}
-              />
+              <>
+                {isLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-prosterz-50">
+                    <div className="h-8 w-8 border-4 border-t-prosterz-600 border-prosterz-200 rounded-full animate-spin"></div>
+                  </div>
+                )}
+                <img
+                  src={poster.image}
+                  alt={poster.title}
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+                  onLoad={() => setIsLoading(false)}
+                  onError={(e) => {
+                    console.error(`Failed to load image: ${poster.image}`);
+                    setIsLoading(false);
+                    setImageError(true);
+                  }}
+                />
+              </>
             )}
           </motion.div>
           <div className="absolute top-2 right-2">
