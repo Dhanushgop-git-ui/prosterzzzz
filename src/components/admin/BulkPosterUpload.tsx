@@ -3,16 +3,11 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { usePosterStore } from '@/store/usePosterStore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader, CheckCircle2 } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
-interface PosterData {
-  title: string;
-  category: string;
-  image: string;
-  priceA3: number;
-  priceA4: number;
-}
+import { carPosters } from '@/data/carPosters';
+import { uploadPosterImage } from '@/utils/posterUploader';
+import UploadProgress from './UploadProgress';
 
 const BulkPosterUpload = () => {
   const { toast } = useToast();
@@ -20,105 +15,6 @@ const BulkPosterUpload = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [completedPosters, setCompletedPosters] = useState<string[]>([]);
-
-  // Car poster data with the image paths
-  const carPosters: PosterData[] = [
-    {
-      title: "Green Lamborghini Aventador",
-      category: "Cars",
-      image: "public/lovable-uploads/e255e9e0-1ffe-481c-958d-1fdbcd4204f4.png",
-      priceA3: 109,
-      priceA4: 99
-    },
-    {
-      title: "BMW M Power",
-      category: "Cars",
-      image: "public/lovable-uploads/48f2065f-a318-4bf0-870b-e0c3e05a20d0.png",
-      priceA3: 109,
-      priceA4: 99
-    },
-    {
-      title: "Mazda RX-7",
-      category: "Cars",
-      image: "public/lovable-uploads/2f32933b-1559-4906-8f16-2303c158b258.png",
-      priceA3: 109,
-      priceA4: 99
-    },
-    {
-      title: "Lamborghini Revuelto LMBO",
-      category: "Cars",
-      image: "public/lovable-uploads/ae5605b0-c842-4bbb-9715-9f1ba4a46af3.png",
-      priceA3: 109,
-      priceA4: 99
-    },
-    {
-      title: "Ferrari LaFerrari",
-      category: "Cars",
-      image: "public/lovable-uploads/c5660736-ba48-4adb-a92e-ffca24e3ef76.png",
-      priceA3: 109,
-      priceA4: 99
-    },
-    {
-      title: "Toyota GR Supra",
-      category: "Cars",
-      image: "public/lovable-uploads/4d6303c8-09fe-41bc-8096-7015a2c41f75.png",
-      priceA3: 109,
-      priceA4: 99
-    },
-    {
-      title: "Porsche 918 Spyder",
-      category: "Cars",
-      image: "public/lovable-uploads/9ca83f20-1f47-4aa8-aaf1-b22f2eb8ddb0.png",
-      priceA3: 109,
-      priceA4: 99
-    },
-    {
-      title: "BMW M3 Sports Evolution",
-      category: "Cars",
-      image: "public/lovable-uploads/9c04d93d-5c56-4e53-8ec4-8059c19a5ba2.png",
-      priceA3: 109,
-      priceA4: 99
-    }
-  ];
-
-  const uploadPosterImage = async (imageUrl: string): Promise<string> => {
-    try {
-      // Fetch the image file from the lovable uploads
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      
-      // Create a file object with the blob
-      const fileName = imageUrl.split('/').pop() || 'poster.png';
-      const file = new File([blob], fileName, { type: blob.type });
-      
-      // Generate a unique file name for Supabase storage
-      const fileExt = fileName.split('.').pop();
-      const supabaseFileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      
-      // Upload to Supabase storage
-      const { error: uploadError, data } = await supabase.storage
-        .from('posters')
-        .upload(supabaseFileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-        
-      if (uploadError) {
-        console.error('Error uploading to Supabase:', uploadError);
-        throw new Error(uploadError.message);
-      }
-      
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('posters')
-        .getPublicUrl(supabaseFileName);
-        
-      return publicUrl;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
-    }
-  };
 
   const handleBulkUpload = async () => {
     setIsLoading(true);
@@ -184,28 +80,7 @@ const BulkPosterUpload = () => {
         This will add {carPosters.length} car posters to your database using the images you provided.
       </p>
       
-      {completedPosters.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium">Uploaded posters:</h3>
-          <ul className="space-y-1 max-h-60 overflow-y-auto text-sm">
-            {completedPosters.map((title, index) => (
-              <li key={index} className="flex items-center">
-                <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                {title}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      
-      {progress > 0 && progress < 100 && (
-        <div className="w-full bg-prosterz-100 rounded-full h-2.5">
-          <div 
-            className="bg-prosterz-600 h-2.5 rounded-full transition-all duration-300" 
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-      )}
+      <UploadProgress progress={progress} completedPosters={completedPosters} />
       
       <Button
         onClick={handleBulkUpload}
@@ -226,3 +101,4 @@ const BulkPosterUpload = () => {
 };
 
 export default BulkPosterUpload;
+
