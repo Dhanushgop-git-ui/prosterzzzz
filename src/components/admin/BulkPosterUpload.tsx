@@ -24,60 +24,60 @@ const BulkPosterUpload = () => {
   // Car poster data with the image paths
   const carPosters: PosterData[] = [
     {
-      title: "Lamborghini Aventador",
+      title: "Green Lamborghini Aventador",
       category: "Cars",
-      image: "public/lovable-uploads/3eeeb369-c5f4-45a1-9d10-37dfd7fb474c.png",
-      priceA3: 699,
-      priceA4: 499
+      image: "public/lovable-uploads/e255e9e0-1ffe-481c-958d-1fdbcd4204f4.png",
+      priceA3: 109,
+      priceA4: 99
     },
     {
       title: "BMW M Power",
       category: "Cars",
-      image: "public/lovable-uploads/528cdf33-591a-431d-aded-faaa2453b5be.png",
-      priceA3: 699,
-      priceA4: 499
+      image: "public/lovable-uploads/48f2065f-a318-4bf0-870b-e0c3e05a20d0.png",
+      priceA3: 109,
+      priceA4: 99
     },
     {
       title: "Mazda RX-7",
       category: "Cars",
-      image: "public/lovable-uploads/20b7ce3b-5de4-48a7-bdda-fe0b104cdfd3.png",
-      priceA3: 699,
-      priceA4: 499
+      image: "public/lovable-uploads/2f32933b-1559-4906-8f16-2303c158b258.png",
+      priceA3: 109,
+      priceA4: 99
     },
     {
-      title: "Lamborghini Revuelto",
+      title: "Lamborghini Revuelto LMBO",
       category: "Cars",
-      image: "public/lovable-uploads/7291398c-d40b-4bd5-a7fc-d50159b56229.png",
-      priceA3: 799,
-      priceA4: 599
+      image: "public/lovable-uploads/ae5605b0-c842-4bbb-9715-9f1ba4a46af3.png",
+      priceA3: 109,
+      priceA4: 99
     },
     {
       title: "Ferrari LaFerrari",
       category: "Cars",
-      image: "public/lovable-uploads/b89a9232-9d23-48d2-8566-ee4f0c678c87.png",
-      priceA3: 799,
-      priceA4: 599
+      image: "public/lovable-uploads/c5660736-ba48-4adb-a92e-ffca24e3ef76.png",
+      priceA3: 109,
+      priceA4: 99
     },
     {
-      title: "Toyota Supra",
+      title: "Toyota GR Supra",
       category: "Cars",
-      image: "public/lovable-uploads/3830b9ed-970b-419c-a52b-615aed1a6033.png",
-      priceA3: 649,
-      priceA4: 449
+      image: "public/lovable-uploads/4d6303c8-09fe-41bc-8096-7015a2c41f75.png",
+      priceA3: 109,
+      priceA4: 99
     },
     {
       title: "Porsche 918 Spyder",
       category: "Cars",
-      image: "public/lovable-uploads/e2668fa9-02b7-40b4-aa94-58813d8d893f.png",
-      priceA3: 799,
-      priceA4: 599
+      image: "public/lovable-uploads/9ca83f20-1f47-4aa8-aaf1-b22f2eb8ddb0.png",
+      priceA3: 109,
+      priceA4: 99
     },
     {
       title: "BMW M3 Sports Evolution",
       category: "Cars",
-      image: "public/lovable-uploads/649c5dc4-3ed5-4ed7-b050-68e0df3e3dc9.png",
-      priceA3: 649,
-      priceA4: 449
+      image: "public/lovable-uploads/9c04d93d-5c56-4e53-8ec4-8059c19a5ba2.png",
+      priceA3: 109,
+      priceA4: 99
     }
   ];
 
