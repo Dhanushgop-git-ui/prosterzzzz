@@ -9,6 +9,9 @@ import { carPosters } from '@/data/carPosters';
 import { uploadPosterImage } from '@/utils/posterUploader';
 import UploadProgress from './UploadProgress';
 
+// Constants
+const BUCKET_NAME = 'proterz';
+
 const BulkPosterUpload = () => {
   const { toast } = useToast();
   const { addPoster } = usePosterStore();
@@ -24,13 +27,13 @@ const BulkPosterUpload = () => {
     try {
       // Create posters bucket if it doesn't exist
       try {
-        const { data, error } = await supabase.storage.getBucket('posters');
+        const { data, error } = await supabase.storage.getBucket(BUCKET_NAME);
         if (error && error.message.includes('does not exist')) {
-          await supabase.storage.createBucket('posters', {
+          await supabase.storage.createBucket(BUCKET_NAME, {
             public: true,
             fileSizeLimit: 5242880 // 5MB
           });
-          console.log('Created posters bucket');
+          console.log(`Created ${BUCKET_NAME} bucket`);
         }
       } catch (err) {
         console.error('Error checking/creating bucket:', err);
@@ -101,4 +104,3 @@ const BulkPosterUpload = () => {
 };
 
 export default BulkPosterUpload;
-

@@ -1,6 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Constants
+const BUCKET_NAME = 'proterz';
+
 export const uploadPosterImage = async (imageUrl: string): Promise<string> => {
   try {
     // Fetch the image file from the lovable uploads
@@ -17,7 +20,7 @@ export const uploadPosterImage = async (imageUrl: string): Promise<string> => {
     
     // Upload to Supabase storage
     const { error: uploadError, data } = await supabase.storage
-      .from('posters')
+      .from(BUCKET_NAME)
       .upload(supabaseFileName, file, {
         cacheControl: '3600',
         upsert: false
@@ -30,7 +33,7 @@ export const uploadPosterImage = async (imageUrl: string): Promise<string> => {
     
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('posters')
+      .from(BUCKET_NAME)
       .getPublicUrl(supabaseFileName);
       
     return publicUrl;
@@ -39,4 +42,3 @@ export const uploadPosterImage = async (imageUrl: string): Promise<string> => {
     throw error;
   }
 };
-
