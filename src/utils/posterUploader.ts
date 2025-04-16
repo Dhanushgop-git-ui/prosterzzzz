@@ -48,7 +48,7 @@ export const uploadPosterImage = async (imageUrl: string): Promise<string> => {
     // Ensure bucket exists before upload
     const bucketExists = await ensureBucketExists();
     if (!bucketExists) {
-      console.warn(`Upload will proceed but ${BUCKET_NAME} bucket might not be properly configured`);
+      throw new Error(`Upload failed: ${BUCKET_NAME} bucket could not be created or accessed`);
     }
     
     // Fetch the image file from the lovable uploads
@@ -74,7 +74,7 @@ export const uploadPosterImage = async (imageUrl: string): Promise<string> => {
       .from(BUCKET_NAME)
       .upload(supabaseFileName, file, {
         cacheControl: '3600',
-        upsert: true // Changed to true to allow overwrites if needed
+        upsert: true
       });
       
     if (uploadError) {
